@@ -59,7 +59,7 @@ def surface_plot(
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
 
-    surface = ax.plot_surface(X_grid, Y_grid, Z_grid, cmap=cmap, alpha=0.5)
+    surface = ax.plot_surface(X_grid, Y_grid, Z_grid, cmap=cmap, alpha=0.9)
 
     cbar = fig.colorbar(surface, shrink=0.5, aspect=10)
     cbar.set_label(zlabel)
