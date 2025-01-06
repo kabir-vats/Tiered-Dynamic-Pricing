@@ -2,5 +2,9 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "pricing"
+dynamic = ["version"]
+
 [tool.setuptools]
-packages = ["my_project"]
+packages = ["pricing"]
