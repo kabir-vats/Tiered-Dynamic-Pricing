@@ -108,7 +108,7 @@ def plot_descent(
 
     ax = fig.axes[0]
 
-    ax.plot(x, y, z, color='green', linewidth='0.5')
+    ax.plot(x, y, z, color='green', marker='o', linewidth='0.5', markersize=0.7)
 
     return fig
 

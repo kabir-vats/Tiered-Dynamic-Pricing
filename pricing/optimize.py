@@ -167,3 +167,72 @@ class DualAnnealing:
         self.profit = -result.fun
         self.prices = -result.x
         return result
+
+
+class GradientDescentAdam:
+    """
+    Gradient Descent Optimizer with Adam for Maximizing Profit.
+
+    Implements the Adam optimization algorithm for numerical gradient descent
+    to optimize tiered pricing.
+    """
+    def __init__(self, system, tolerance=1e-6, max_iters=1000, gradient_delta=1e-6,
+                 lr=0.01, beta1=0.9, beta2=0.999, epsilon=1e-8):
+        self.system = system
+        self.tolerance = tolerance
+        self.max_iters = max_iters
+        self.gradient_delta = gradient_delta
+        self.learning_rate = min(min(system.costs), lr * min(system.costs) * (max(system.costs) / min(system.costs))**(system.scaling_param)) #TODO: Better expressio
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.epsilon = epsilon
+
+    def numerical_gradient(self, prices):
+        """Compute the numerical gradient of the profit function."""
+        grad = [0.0] * len(prices)
+        for i in range(len(prices)):
+            vec = [0.0] * len(prices)
+            vec[i] = 1.0
+            grad[i] = (
+                self.system.profit(prices + self.gradient_delta * np.asarray(vec)) -
+                self.system.profit(prices)
+            ) / self.gradient_delta
+        return grad
+
+    def maximize(self):
+        """
+        Perform optimization using Adam.
+        """
+        self.prices = list(self.system.costs)
+        self.profit = self.system.profit(self.prices)
+        self.profit_history = [self.profit]
+        self.price_history = [self.prices]
+
+        # Initialize Adam parameters
+        m_t = np.zeros(len(self.prices))  # First moment vector
+        v_t = np.zeros(len(self.prices))  # Second moment vector
+        t = 0  # Iteration counter
+
+        for _ in range(self.max_iters):
+            t += 1
+            grad = np.array(self.numerical_gradient(self.prices))
+
+            # Update moments
+            m_t = self.beta1 * m_t + (1 - self.beta1) * grad
+            v_t = self.beta2 * v_t + (1 - self.beta2) * (grad ** 2)
+
+            # Bias correction
+            m_t_hat = m_t / (1 - self.beta1 ** t)
+            v_t_hat = v_t / (1 - self.beta2 ** t)
+
+            # Update prices
+            prices_next = np.array(self.prices) + self.learning_rate * m_t_hat / (np.sqrt(v_t_hat) + self.epsilon)
+
+            # Early stopping if change in prices is below tolerance
+            if np.linalg.norm(prices_next - self.prices) < self.tolerance:
+                break
+
+            self.prices = prices_next.tolist()
+            self.profit = self.system.profit(self.prices)
+            self.profit_history.append(self.profit)
+            self.price_history.append(self.prices.copy())
