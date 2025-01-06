@@ -30,13 +30,15 @@ class GradientDescent:
 
     def __init__(self, system: TieredPricingSystem, tolerance: float = 1e-6,
                  max_iters: int = 1000, gradient_delta: float = 1e-6,
-                 patience: int = 1) -> None:
+                 lr: int = None, patience: int = 1) -> None:
         self.system = system
-        self.learning_rate = min(system.costs) / 5
         self.tolerance = tolerance
         self.max_iters = max_iters
         self.gradient_delta = gradient_delta
         self.patience = patience
+        self.learning_rate = lr
+        if lr is None:
+            self.learning_rate = min(system.costs) / 5
 
     def numerical_gradient(self, prices: List[float]) -> List[float]:
         """
@@ -80,7 +82,7 @@ class GradientDescent:
         self.price_history : List[List[float]]
             History of price vectors at each iteration.
         """
-        self.prices = self.system.costs.copy()
+        self.prices = list(self.system.costs)
         self.profit = self.system.profit(self.prices)
         self.profit_history = [self.profit]
         self.price_history = [self.prices]

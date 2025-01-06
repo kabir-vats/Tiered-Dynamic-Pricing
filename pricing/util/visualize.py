@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from pricing.optimize import GradientDescent
+
 
 def surface_plot(
     X: list | np.ndarray,
@@ -13,6 +15,7 @@ def surface_plot(
     azim: int = 225,
     elev: int = 25,
     cmap: str = 'plasma',
+    alpha: float = 0.9,
 ) -> plt.Figure:
     """
     Create a 3D surface plot from the given input data.
@@ -40,6 +43,9 @@ def surface_plot(
         Elevation angle for 3D view initialization (default is 25).
     cmap : str, optional
         Colormap for the surface plot (default is 'plasma').
+    alpha : float, optional
+        Alpha value (transparency) of the plot
+        default: 0.9
 
     Returns
     -------
@@ -59,7 +65,7 @@ def surface_plot(
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
 
-    surface = ax.plot_surface(X_grid, Y_grid, Z_grid, cmap=cmap, alpha=0.9)
+    surface = ax.plot_surface(X_grid, Y_grid, Z_grid, cmap=cmap, alpha=alpha)
 
     cbar = fig.colorbar(surface, shrink=0.5, aspect=10)
     cbar.set_label(zlabel)
@@ -78,3 +84,31 @@ def surface_plot(
     ax.grid(True)
 
     return fig
+
+
+def plot_descent(
+    X: list | np.ndarray,
+    Y: list | np.ndarray,
+    Z: list | np.ndarray,
+    descent: GradientDescent,
+    title: str,
+    azim: int = 225,
+    elev: int = 25,
+    cmap: str = 'plasma'
+) -> plt.Figure:
+
+    x = [price[0] for price in descent.price_history]
+    y = [price[1] for price in descent.price_history]
+    z = descent.profit_history
+
+    fig = surface_plot(X, Y, Z, "Tier 1 Price", "Tier 2 Price",
+                       "Expected Profit / Customer",
+                       title=title,
+                       elev=15, alpha=0.5)
+
+    ax = fig.axes[0]
+
+    ax.plot(x, y, z, color='green', linewidth='0.5')
+
+    return fig
+
