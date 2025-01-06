@@ -64,8 +64,8 @@ def simulate_optimal_profits(system, bounds: List, n_samples: int,
     n_samples : int
         The number of samples per price.
 
-    optimizer : DualAnnealing | GradientDescent
-        The optimization method
+    optimizer : DualAnnealing | GradientDescent, opt
+        The optimization method, default is DualAnnealing
 
     Returns
     -------
