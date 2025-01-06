@@ -1,6 +1,7 @@
 import numpy as np
 from typing import List
 from pricing.system import TieredPricingSystem
+from scipy.optimize import dual_annealing, OptimizeResult
 
 
 class GradientDescent:
@@ -13,8 +14,7 @@ class GradientDescent:
     Parameters
     ----------
     system : TieredPricingSystem
-        An instance of the tiered pricing system that provides the cost structure
-        and the `profit` method to calculate profit for a set of prices.
+        An instance of the tiered pricing system.
     tolerance : float, optional
         Convergence tolerance for early stopping. The algorithm stops when the
         change in prices is smaller than this value. Default is 1e-6.
@@ -25,12 +25,12 @@ class GradientDescent:
         Default is 1e-6.
     patience : int, optional
         Number of consecutive iterations with decreasing profit before halving
-        the learning rate. Default is 2.
+        the learning rate. Default is 1.
     """
 
     def __init__(self, system: TieredPricingSystem, tolerance: float = 1e-6,
                  max_iters: int = 1000, gradient_delta: float = 1e-6,
-                 patience: int = 2) -> None:
+                 patience: int = 1) -> None:
         self.system = system
         self.learning_rate = min(system.costs) / 5
         self.tolerance = tolerance
@@ -105,3 +105,62 @@ class GradientDescent:
                 if patience_count == self.patience:
                     self.learning_rate *= 0.5
                     patience_count = 0
+
+
+class DualAnnealing:
+    """
+    Dual Annealing Optimizer for Maximizing Profit in a Tiered Pricing System.
+
+    This class interfaces scipy's dual_annealing optimizer and serves as a
+    baseline 'correct' optimized result to compare to other optimizations
+
+    Parameters
+    ----------
+    system : TieredPricingSystem
+        An instance of the tiered pricing system.
+    """
+
+    def __init__(self, system: TieredPricingSystem):
+        if (system.pdf_type == 'uniform'):
+            self.price_bounds = [(cost, cost * (system.mu + system.sigma))
+                                 for cost in system.costs]
+        else:
+            self.price_bounds = [(cost, cost * (system.mu + system.sigma) * 3)
+                                 for cost in system.costs]
+
+    def objecive(self, prices: List[(float)]) -> float:
+        """
+        Compute the objective function of the system for certain prices.
+
+        Parameters
+        ----------
+        prices : List[float]
+            Current prices for each tier.
+
+        Returns
+        -------
+        objective : float
+            Negative profit of the system.
+        """
+        return -self.system.profit(prices)
+
+    def maximize(self) -> OptimizeResult:
+        """
+        Find the optimal prices and profits for the tiered pricing system
+
+        Returns
+        -------
+        result : scipy.optimize.OptimizeResult
+            The optimizeresult from scipy
+
+        Updates
+        -------
+        self.prices : List[float]
+            Optimized prices after convergence or reaching the maximum iterations.
+        self.profit : float
+            Maximum profit achieved during the optimization process.
+        """
+        result = dual_annealing(self.objective, self.price_bounds)
+        self.profit = -result.fun
+        self.prices = -result.x
+        return result
