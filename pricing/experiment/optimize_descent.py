@@ -30,7 +30,6 @@ def test_descent(system, bounds, n_samples):
     return profits_diff, profits_dual, profits_descent, sample_costs
 
 def test_lr():
-    np.set_printoptions(legacy='1.25')
     C = [1, 4]
     lambda_value = 5/6
     mu = 2
@@ -58,18 +57,31 @@ def test_lr():
 
 
 def main():
-    test_lr()
-    C = [0.1, 55.6]
+    np.set_printoptions(legacy='1.25')
+    # test_lr()
+    C = [0.1, 1, 10, 100]
     lambda_value = 5/6
     mu = 2
     sigma = 1
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma)
-    profits, samples = simulate_profits(system ,n_samples=100)
+    # profits, samples = simulate_profits(system ,n_samples=100)
 
     descent = GradientDescentAdam(system)
     descent.maximize()
-    plot_descent(samples[0], samples[1], profits, descent, f"{list(system.costs)} profit: {descent.profit}")
-    plt.show()
+
+    dual = DualAnnealing(system)
+    dual.maximize()
+
+    print(descent.profit)
+    print(dual.profit)
+
+    print(system.tier_probabilities(descent.prices))
+    print(system.tier_probabilities(dual.prices))
+
+    print(descent.prices)
+    print(dual.prices)
+    # plot_descent(samples[0], samples[1], profits, descent, f"{list(system.costs)} profit: {descent.profit}")
+    # plt.show()
 
 
 if __name__ == "__main__":

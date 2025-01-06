@@ -165,7 +165,7 @@ class DualAnnealing:
         """
         result = dual_annealing(self.objective, self.price_bounds)
         self.profit = -result.fun
-        self.prices = -result.x
+        self.prices = result.x
         return result
 
 
