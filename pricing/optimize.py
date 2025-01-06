@@ -121,6 +121,7 @@ class DualAnnealing:
     """
 
     def __init__(self, system: TieredPricingSystem):
+        self.system = system
         if (system.pdf_type == 'uniform'):
             self.price_bounds = [(cost, cost * (system.mu + system.sigma))
                                  for cost in system.costs]
@@ -128,7 +129,7 @@ class DualAnnealing:
             self.price_bounds = [(cost, cost * (system.mu + system.sigma) * 3)
                                  for cost in system.costs]
 
-    def objecive(self, prices: List[(float)]) -> float:
+    def objective(self, prices: List[(float)]) -> float:
         """
         Compute the objective function of the system for certain prices.
 
