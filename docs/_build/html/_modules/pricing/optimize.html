@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pricing.optimize &#8212; Tiered Dynamic Pricing 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pricing.optimize</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="kn">from</span> <span class="nn">pricing.system</span> <span class="kn">import</span> <span class="n">TieredPricingSystem</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">dual_annealing</span><span class="p">,</span> <span class="n">OptimizeResult</span>
+
+
+<div class="viewcode-block" id="GradientDescent">
+<a class="viewcode-back" href="../../pricing.html#pricing.optimize.GradientDescent">[docs]</a>
+<span class="k">class</span> <span class="nc">GradientDescent</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gradient Descent Optimizer for Maximizing Profit in a Tiered Pricing System.</span>
+
+<span class="sd">    This class implements a gradient descent algorithm to optimize the pricing</span>
+<span class="sd">    strategy for a given system by approximating gradients numerically.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    system : TieredPricingSystem</span>
+<span class="sd">        An instance of the tiered pricing system.</span>
+<span class="sd">    tolerance : float, optional</span>
+<span class="sd">        Convergence tolerance for early stopping. The algorithm stops when the</span>
+<span class="sd">        change in prices is smaller than this value. Default is 1e-6.</span>
+<span class="sd">    max_iters : int, optional</span>
+<span class="sd">        Maximum number of iterations for the optimization process. Default is 1000.</span>
+<span class="sd">    gradient_delta : float, optional</span>
+<span class="sd">        Small change in price used to approximate gradients numerically.</span>
+<span class="sd">        Default is 1e-6.</span>
+<span class="sd">    patience : int, optional</span>
+<span class="sd">        Number of consecutive iterations with decreasing profit before halving</span>
+<span class="sd">        the learning rate. Default is 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">system</span><span class="p">:</span> <span class="n">TieredPricingSystem</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
+                 <span class="n">max_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">gradient_delta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
+                 <span class="n">patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system</span> <span class="o">=</span> <span class="n">system</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">costs</span><span class="p">)</span> <span class="o">/</span> <span class="mi">5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span> <span class="o">=</span> <span class="n">tolerance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iters</span> <span class="o">=</span> <span class="n">max_iters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gradient_delta</span> <span class="o">=</span> <span class="n">gradient_delta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patience</span> <span class="o">=</span> <span class="n">patience</span>
+
+<div class="viewcode-block" id="GradientDescent.numerical_gradient">
+<a class="viewcode-back" href="../../pricing.html#pricing.optimize.GradientDescent.numerical_gradient">[docs]</a>
+    <span class="k">def</span> <span class="nf">numerical_gradient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the numerical gradient of the profit function with respect to prices.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        prices : List[float]</span>
+<span class="sd">            Current prices for each tier.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        grad : List[float]</span>
+<span class="sd">            Numerical gradient of the profit function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">grad</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">prices</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">prices</span><span class="p">)):</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">prices</span><span class="p">)</span>
+            <span class="n">vec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="n">grad</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">profit</span><span class="p">(</span><span class="n">prices</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_delta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">vec</span><span class="p">))</span> <span class="o">-</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">profit</span><span class="p">(</span><span class="n">prices</span><span class="p">)</span>
+            <span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_delta</span>
+        <span class="k">return</span> <span class="n">grad</span></div>
+
+
+<div class="viewcode-block" id="GradientDescent.maximize">
+<a class="viewcode-back" href="../../pricing.html#pricing.optimize.GradientDescent.maximize">[docs]</a>
+    <span class="k">def</span> <span class="nf">maximize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform gradient descent to maximize profit.</span>
+
+<span class="sd">        This method iteratively updates the prices to maximize the profit based</span>
+<span class="sd">        on the numerical gradient of the profit function.</span>
+
+<span class="sd">        Updates</span>
+<span class="sd">        -------</span>
+<span class="sd">        self.prices : List[float]</span>
+<span class="sd">            Optimized prices after convergence or reaching the maximum iterations.</span>
+<span class="sd">        self.profit : float</span>
+<span class="sd">            Maximum profit achieved during the optimization process.</span>
+<span class="sd">        self.profit_history : List[float]</span>
+<span class="sd">            History of profit values at each iteration.</span>
+<span class="sd">        self.price_history : List[List[float]]</span>
+<span class="sd">            History of price vectors at each iteration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">costs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">profit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">profit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prices</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">profit_history</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">profit</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">price_history</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">prices</span><span class="p">]</span>
+        <span class="n">patience_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iters</span><span class="p">):</span>
+            <span class="n">grad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">numerical_gradient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prices</span><span class="p">)</span>
+            <span class="n">prices_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prices</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">)</span> <span class="o">*</span> <span class="n">grad</span>
+
+            <span class="c1"># Early stopping if change in prices is below tolerance</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">prices_next</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">prices</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">prices</span> <span class="o">=</span> <span class="n">prices_next</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">profit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">profit</span><span class="p">(</span><span class="n">prices_next</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">profit_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">profit</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">price_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prices_next</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+            <span class="c1"># Adjust learning rate if profit decreases</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">profit_history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">profit_history</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]:</span>
+                <span class="n">patience_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">patience_count</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">patience</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">*=</span> <span class="mf">0.5</span>
+                    <span class="n">patience_count</span> <span class="o">=</span> <span class="mi">0</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DualAnnealing">
+<a class="viewcode-back" href="../../pricing.html#pricing.optimize.DualAnnealing">[docs]</a>
+<span class="k">class</span> <span class="nc">DualAnnealing</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Dual Annealing Optimizer for Maximizing Profit in a Tiered Pricing System.</span>
+
+<span class="sd">    This class interfaces scipy&#39;s dual_annealing optimizer and serves as a</span>
+<span class="sd">    baseline &#39;correct&#39; optimized result to compare to other optimizations</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    system : TieredPricingSystem</span>
+<span class="sd">        An instance of the tiered pricing system.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">system</span><span class="p">:</span> <span class="n">TieredPricingSystem</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system</span> <span class="o">=</span> <span class="n">system</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">pdf_type</span> <span class="o">==</span> <span class="s1">&#39;uniform&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">price_bounds</span> <span class="o">=</span> <span class="p">[(</span><span class="n">cost</span><span class="p">,</span> <span class="n">cost</span> <span class="o">*</span> <span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">mu</span> <span class="o">+</span> <span class="n">system</span><span class="o">.</span><span class="n">sigma</span><span class="p">))</span>
+                                 <span class="k">for</span> <span class="n">cost</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">costs</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">price_bounds</span> <span class="o">=</span> <span class="p">[(</span><span class="n">cost</span><span class="p">,</span> <span class="n">cost</span> <span class="o">*</span> <span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">mu</span> <span class="o">+</span> <span class="n">system</span><span class="o">.</span><span class="n">sigma</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
+                                 <span class="k">for</span> <span class="n">cost</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">costs</span><span class="p">]</span>
+
+<div class="viewcode-block" id="DualAnnealing.objective">
+<a class="viewcode-back" href="../../pricing.html#pricing.optimize.DualAnnealing.objective">[docs]</a>
+    <span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prices</span><span class="p">:</span> <span class="n">List</span><span class="p">[(</span><span class="nb">float</span><span class="p">)])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the objective function of the system for certain prices.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        prices : List[float]</span>
+<span class="sd">            Current prices for each tier.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        objective : float</span>
+<span class="sd">            Negative profit of the system.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">profit</span><span class="p">(</span><span class="n">prices</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DualAnnealing.maximize">
+<a class="viewcode-back" href="../../pricing.html#pricing.optimize.DualAnnealing.maximize">[docs]</a>
+    <span class="k">def</span> <span class="nf">maximize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptimizeResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find the optimal prices and profits for the tiered pricing system</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        result : scipy.optimize.OptimizeResult</span>
+<span class="sd">            The optimizeresult from scipy</span>
+
+<span class="sd">        Updates</span>
+<span class="sd">        -------</span>
+<span class="sd">        self.prices : List[float]</span>
+<span class="sd">            Optimized prices after convergence or reaching the maximum iterations.</span>
+<span class="sd">        self.profit : float</span>
+<span class="sd">            Maximum profit achieved during the optimization process.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">dual_annealing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">objective</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">price_bounds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">profit</span> <span class="o">=</span> <span class="o">-</span><span class="n">result</span><span class="o">.</span><span class="n">fun</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prices</span> <span class="o">=</span> <span class="o">-</span><span class="n">result</span><span class="o">.</span><span class="n">x</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Tiered Dynamic Pricing</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">pricing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Kabir Vats.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
