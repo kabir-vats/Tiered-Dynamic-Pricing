@@ -182,7 +182,9 @@ class GradientDescentAdam:
         self.tolerance = tolerance
         self.max_iters = max_iters
         self.gradient_delta = gradient_delta
-        self.learning_rate = min(min(system.costs), lr * min(system.costs) * (max(system.costs) / min(system.costs))**(system.scaling_param)) #TODO: Better expressio
+        self.learning_rate = min(min(system.costs), lr * min(system.costs) *
+                                 (max(system.costs) / min(system.costs)) **
+                                 (system.scaling_param))  # TODO: Better expressio
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
@@ -226,7 +228,8 @@ class GradientDescentAdam:
             v_t_hat = v_t / (1 - self.beta2 ** t)
 
             # Update prices
-            prices_next = np.array(self.prices) + self.learning_rate * m_t_hat / (np.sqrt(v_t_hat) + self.epsilon)
+            prices_next = np.array(self.prices) + (self.learning_rate * m_t_hat /
+                                                   (np.sqrt(v_t_hat) + self.epsilon))
 
             # Early stopping if change in prices is below tolerance
             if np.linalg.norm(prices_next - self.prices) < self.tolerance:

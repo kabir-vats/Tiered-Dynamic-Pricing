@@ -7,17 +7,6 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    C = [1, 4]
-    lambda_value = 3/6
-    mu = 2
-    sigma = 1
-    bounds = [[0.1, 10], [0.1, 10]]
-    num_samples = 10
-    system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma)
-    diff, _, _, _ = test_descent(system, bounds, num_samples)
-    plt.plot(diff)
-    plt.show()
-
 
 if __name__ == "__main__":
     main()
