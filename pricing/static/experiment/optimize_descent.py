@@ -80,7 +80,8 @@ def main():
 
     print(descent.prices)
     print(dual.prices)
-    # plot_descent(samples[0], samples[1], profits, descent, f"{list(system.costs)} profit: {descent.profit}")
+    # plot_descent(samples[0], samples[1], profits, descent, f"{list(system.costs)} 
+    # profit: {descent.profit}")
     # plt.show()
 
 

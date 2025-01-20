@@ -2,7 +2,7 @@ from typing import List
 import numpy as np
 
 
-class Population:
+class Customer:
     def __init__(self, mu: float, sigma: float, scaling_param: float,
                  pdf_type: str = 'uniform') -> None:
         self.mu = mu
