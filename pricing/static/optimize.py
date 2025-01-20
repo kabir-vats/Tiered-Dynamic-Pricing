@@ -1,6 +1,6 @@
 import numpy as np
 from typing import List
-from pricing.system import TieredPricingSystem
+from pricing.static.system import TieredPricingSystem
 from scipy.optimize import dual_annealing, OptimizeResult
 
 

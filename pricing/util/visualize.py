@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from pricing.optimize import GradientDescent
+from pricing.static.optimize import GradientDescent
 
 
 def surface_plot(

@@ -1,9 +1,9 @@
-from pricing.system import TieredPricingSystem
+from pricing.static.system import TieredPricingSystem
 import numpy as np
 from typing import List
 import itertools
 from tqdm import tqdm
-from pricing.optimize import DualAnnealing
+from pricing.static.optimize import DualAnnealing
 
 
 def simulate_profits(system: TieredPricingSystem,

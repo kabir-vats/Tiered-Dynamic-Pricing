@@ -2,8 +2,8 @@ import numpy as np
 import itertools
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from pricing.optimize import GradientDescent, DualAnnealing, GradientDescentAdam
-from pricing.system import TieredPricingSystem
+from pricing.static.optimize import GradientDescent, DualAnnealing, GradientDescentAdam
+from pricing.static.system import TieredPricingSystem
 from pricing.util.simulate import simulate_profits
 from pricing.util.visualize import plot_descent
 
