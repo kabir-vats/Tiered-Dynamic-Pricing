@@ -60,7 +60,7 @@ class Population:
 
         base_cost = min(costs)
 
-        utilities = [self.utility(cost, base_cost, price, valuation_param)
-                     for cost, price in zip(costs, prices)]
+        utilities = [0] + [self.utility(cost, base_cost, price, valuation_param)
+                           for cost, price in zip(costs, prices)]
 
-        return np.argmax(utilities) + 1
+        return np.argmax(utilities)
