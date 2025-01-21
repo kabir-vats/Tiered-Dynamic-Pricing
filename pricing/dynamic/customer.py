@@ -32,7 +32,7 @@ class Customer:
             The utility of the customer.
         """
 
-        return valuation_param * cost * (cost / base_cost)**self.scaling_param - price
+        return valuation_param * (cost / base_cost)**self.scaling_param - price
 
     def choose_tier(self, costs: List[float], prices: List[float]) -> int:
         """
@@ -62,5 +62,4 @@ class Customer:
 
         utilities = [0] + [self.utility(cost, base_cost, price, valuation_param)
                            for cost, price in zip(costs, prices)]
-
         return np.argmax(utilities)
