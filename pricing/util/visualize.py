@@ -85,8 +85,44 @@ def surface_plot(
 
     return fig
 
+def line_plot(
+    X: list | np.ndarray,
+    Y: list | np.ndarray,
+    xlabel: str,
+    ylabel: str,
+    title: str
+):
+    """
+    Create a 2D line plot from the given input data.
+    
+    Parameters
+    ----------
+    X : list or numpy.ndarray
+        1D array or list of values for the x-axis.
+    Y : list or numpy.ndarray
+        1D array or list of values for the y-axis.
+    xlabel : str
+        Label for the x-axis.
+    ylabel : str
+        Label for the y-axis.
+    title : str
+        Title of the plot.
+    
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        A Matplotlib Figure object containing the generated 2D line plot.
+    """
+    fig, ax = plt.subplots()
+    ax.plot(X, Y)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
 
-def plot_descent(
+    return fig
+
+
+def plot_descent_two_tiers(
     X: list | np.ndarray,
     Y: list | np.ndarray,
     Z: list | np.ndarray,
@@ -112,3 +148,24 @@ def plot_descent(
 
     return fig
 
+
+def plot_descent_one_tier(
+    X: list | np.ndarray,
+    Y: list | np.ndarray,
+    descent: GradientDescent,
+    title: str,
+    azim: int = 225,
+    elev: int = 25,
+    cmap: str = 'plasma'
+) -> plt.Figure:
+
+    x = [price[0] for price in descent.price_history]
+    z = descent.profit_history
+
+    fig = line_plot(X, Y, "Price", "Expected Profit / Customer", title=title)
+
+    ax = fig.axes[0]
+
+    ax.plot(x, z, color='green', marker='o', linewidth='0.5', markersize=0.7)
+
+    return fig
