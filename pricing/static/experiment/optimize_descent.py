@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from pricing.static.optimize import GradientDescent, DualAnnealing, GradientDescentAdam
 from pricing.static.system import TieredPricingSystem
 from pricing.util.simulate import simulate_profits
-from pricing.util.visualize import plot_descent
+from pricing.util.visualize import plot_descent_two_tiers, plot_descent_one_tier
 
 
 def test_descent(system, bounds, n_samples):
@@ -29,8 +29,9 @@ def test_descent(system, bounds, n_samples):
 
     return profits_diff, profits_dual, profits_descent, sample_costs
 
+
 def test_lr():
-    C = [1, 4]
+    C = [1, 4] # dummy values for costs
     lambda_value = 5/6
     mu = 2
     sigma = 1
@@ -50,7 +51,7 @@ def test_lr():
             profits, samples = simulate_profits(system)
             descent = GradientDescentAdam(system)
             descent.maximize()
-            plot_descent(samples[0], samples[1], profits, descent, f"{list(sample_costs[i])} profit: {descent.profit} difference: {difference}")
+            plot_descent_two_tiers(samples[0], samples[1], profits, descent, f"{list(sample_costs[i])} lambda: {lambda_value} profit: {descent.profit} difference: {difference}")
             plt.show()
             plt.pause(0.001)
     plt.show()
@@ -59,12 +60,12 @@ def test_lr():
 def main():
     np.set_printoptions(legacy='1.25')
     # test_lr()
-    C = [0.1, 1, 10, 100]
+    C = [3]
     lambda_value = 5/6
     mu = 2
     sigma = 1
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma)
-    # profits, samples = simulate_profits(system ,n_samples=100)
+    profits, samples = simulate_profits(system ,n_samples=100)
 
     descent = GradientDescentAdam(system)
     descent.maximize()
@@ -80,9 +81,8 @@ def main():
 
     print(descent.prices)
     print(dual.prices)
-    # plot_descent(samples[0], samples[1], profits, descent, f"{list(system.costs)} 
-    # profit: {descent.profit}")
-    # plt.show()
+    plot_descent_one_tier(samples[0], profits, descent, f"costs: {list(system.costs)} lambda: {lambda_value} profit: {descent.profit}")
+    plt.show()
 
 
 if __name__ == "__main__":
