@@ -4,12 +4,12 @@ from pricing.static.system import TieredPricingSystem
 
 
 class BatchGradientDescent:
-    def __init__(self, business, batch_size: int = 100,
+    def __init__(self, business, batch_size: int = 1000,
                  max_iters: int = 1500, gradient_delta: float = 1e-1,
                  lr: int = None, beta1=0.9, beta2=0.999, epsilon=1e-8, smoothing_alpha=0) -> None:
         self.business = business
         self.system = TieredPricingSystem(business.costs, len(business.costs),
-                                          business.customer.scaling_param, business.customer.mu,
+                                          business.customer.lam, business.customer.mu,
                                           business.customer.sigma)
         self.max_iters = max_iters
         self.gradient_delta = gradient_delta
@@ -21,7 +21,7 @@ class BatchGradientDescent:
         self.smoothing_alpha = smoothing_alpha
         self.smoothed_grad = None
         if lr is None:
-            self.learning_rate = min(business.costs) / 10
+            self.learning_rate = min(business.costs) / 5
 
     def estimate_gradient(self):
         # Use partial or stale data
@@ -74,5 +74,4 @@ class BatchGradientDescent:
             self.profit = self.system.profit(self.prices)
             self.profit_history.append(self.profit)
             self.price_history.append(self.prices.copy())
-            self.learning_rate *= 0.99
         print(self.business.transaction_history)

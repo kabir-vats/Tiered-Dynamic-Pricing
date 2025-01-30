@@ -7,7 +7,7 @@ from pricing.dynamic.customer import Customer
 from pricing.static.optimize import DualAnnealing, GradientDescentAdam
 from pricing.static.system import TieredPricingSystem
 from pricing.util.simulate import simulate_profits
-from pricing.util.visualize import plot_descent
+from pricing.util.visualize import plot_descent_two_tiers
 
 
 def main():
@@ -41,7 +41,7 @@ def main():
 
     print(descent.prices)
     print(dual.prices)
-    plot_descent(samples[0], samples[1], profits, controller, f"{list(system.costs)}")
+    plot_descent_two_tiers(samples[0], samples[1], profits, controller, f"Costs: {list(system.costs)} Lambda: {lambda_value} Profit: {controller.profit}")
     # profit: {descent.profit}")
     plt.show()
 

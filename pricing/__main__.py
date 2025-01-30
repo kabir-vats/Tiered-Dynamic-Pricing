@@ -1,5 +1,5 @@
-from pricing.system import TieredPricingSystem
-from pricing.optimize import GradientDescent, DualAnnealing # noqa
+from pricing.static.system import TieredPricingSystem
+from pricing.static.optimize import GradientDescent, DualAnnealing # noqa
 from pricing.util.simulate import simulate_optimal_profits
 from pricing.util.visualize import surface_plot
 from pricing.experiment.optimize_descent import test_descent

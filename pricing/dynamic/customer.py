@@ -3,11 +3,11 @@ import numpy as np
 
 
 class Customer:
-    def __init__(self, mu: float, sigma: float, scaling_param: float,
+    def __init__(self, mu: float, sigma: float, lam: float,
                  pdf_type: str = 'uniform') -> None:
         self.mu = mu
         self.sigma = sigma
-        self.scaling_param = scaling_param
+        self.lam = lam
         self.pdf_type = pdf_type
 
     def utility(self, cost: float, base_cost: float, price: float,
@@ -32,7 +32,7 @@ class Customer:
             The utility of the customer.
         """
 
-        return valuation_param * (cost / base_cost)**self.scaling_param - price
+        return valuation_param * (cost / base_cost)**self.lam - price
 
     def choose_tier(self, costs: List[float], prices: List[float]) -> int:
         """

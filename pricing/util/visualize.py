@@ -146,6 +146,8 @@ def plot_descent_two_tiers(
 
     ax.plot(x, y, z, color='green', marker='o', linewidth='0.5', markersize=0.7)
 
+    ax.plot(x[-1], y[-1], z[-1], 'ro')
+
     return fig
 
 

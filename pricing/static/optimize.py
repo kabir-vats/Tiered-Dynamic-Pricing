@@ -184,10 +184,22 @@ class GradientDescentAdam:
         self.gradient_delta = gradient_delta
         self.learning_rate = min(min(system.costs), lr * min(system.costs) *
                                  (max(system.costs) / min(system.costs)) **
-                                 (system.scaling_param))  # TODO: Better expressio
+                                 (system.lam))  # TODO: Better expressio
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
+
+    def gradient(self, prices):
+        """Compute the gradient of the profit function."""
+        grad = [0.0] * len(prices)
+        for i in range(len(prices)):
+            vec = [0.0] * len(prices)
+            vec[i] = 1.0
+            grad[i] = (
+                self.system.profit(prices + self.gradient_delta * np.asarray(vec)) -
+                self.system.profit(prices)
+            ) / self.gradient_delta
+        return grad
 
     def numerical_gradient(self, prices):
         """Compute the numerical gradient of the profit function."""

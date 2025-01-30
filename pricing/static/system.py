@@ -15,7 +15,7 @@ class TieredPricingSystem:
         List of costs for each tier.
     tiers : int
         Number of tiers in the pricing system.
-    scaling_param : float
+    lam : float
         Scaling parameter that influences pricing behavior.
     mu : float
         Mean of the distribution (center of uniform or mean of Gaussian).
@@ -27,11 +27,14 @@ class TieredPricingSystem:
         Default is 'uniform'.
     """
 
-    def __init__(self, costs: List[float], tiers: int, scaling_param: float,
+    def __init__(self, costs: List[float], tiers: int, lam: float,
                  mu: float, sigma: float, pdf_type: str = 'uniform') -> None:
         self.costs = costs
+
+        self.utils = [min(costs) * (cost / min(costs))**lam for cost in costs]
+
         self.tiers = tiers
-        self.scaling_param = scaling_param
+        self.lam = lam
         self.mu = mu
         self.sigma = sigma
         self.pdf_type = pdf_type
@@ -52,33 +55,28 @@ class TieredPricingSystem:
             List of intervals (tuples) representing the range of valuation parameters
             where each tier is optimal.
         """
-        sorted_indices = np.argsort(self.costs)
-        costs = np.array(self.costs)[sorted_indices]
+        sorted_indices = np.argsort(self.utils)
+        utils = np.array(self.utils)[sorted_indices]
         prices = np.array(prices_unsorted)[sorted_indices]
 
         thresholds = [-sys.float_info.max]
 
         for i in range(self.tiers):
             if i == 0:
-                thresholds.append(prices[0] / costs[0])
+                thresholds.append(prices[0] / utils[0])
             else:
                 intersection = (prices[i] - prices[i - 1]) / (
-                    costs[0] * ((costs[i] / costs[0])**self.scaling_param -
-                                (costs[i - 1] / costs[0])**self.scaling_param)
+                    utils[i] - utils[i-1]
                 )
                 j = 0
                 while intersection < thresholds[i - j]:
                     j += 1
                     if i == j:
-                        intersection = prices[i] / (
-                            costs[0] * (costs[i] / costs[0])**self.scaling_param
-                        )
+                        intersection = prices[i] / utils[i]
                         break
                     else:
                         intersection = (prices[i] - prices[i - j - 1]) / (
-                            costs[0] * ((costs[i] / costs[0])**self.scaling_param -
-                                        (costs[i - j - 1] / costs[0])**self.
-                                        scaling_param)
+                            utils[i] - utils[i-j-1]
                         )
                 thresholds.append(intersection)
 
