@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-from typing import List
+from typing import List, Optional
 from pricing.static.system import TieredPricingSystem
 from scipy.optimize import dual_annealing, OptimizeResult
 
@@ -35,7 +35,7 @@ class GradientDescent:
         tolerance: float = 1e-6,
         max_iters: int = 1000,
         gradient_delta: float = 1e-6,
-        lr: int = None,
+        lr: Optional[int] = None,
         patience: int = 1,
     ) -> None:
         self.system = system
@@ -140,7 +140,7 @@ class DualAnnealing:
                 (cost, cost * (system.mu + system.sigma) * 3) for cost in system.costs
             ]
 
-    def objective(self, prices: List[(float)]) -> float:
+    def objective(self, prices: List[float]) -> float:
         """
         Compute the objective function of the system for certain prices.
 
@@ -182,22 +182,44 @@ class GradientDescentAdam:
     """
     Gradient Descent Optimizer with Adam for Maximizing Profit.
 
-    Implements the Adam optimization algorithm for numerical gradient descent
-    to optimize tiered pricing.
+    Implements the Adam optimization algorithm for numerical or analytic
+    gradient descent to optimize a tiered pricing system. This approach
+    adapts the per-parameter learning rates to accelerate convergence.
+
+    Attributes
+    ----------
+    system : TieredPricingSystem
+        The tiered pricing system being optimized.
+    tolerance : float
+        Convergence threshold for stopping.
+    max_iters : int
+        Maximum number of iterations allowed.
+    gradient_delta : float
+        Step size used for numerical gradient approximations.
+    learning_rate : float
+        Initial learning rate for the Adam algorithm.
+    beta1 : float
+        Exponential decay rate for the first moment estimates.
+    beta2 : float
+        Exponential decay rate for the second moment estimates.
+    epsilon : float
+        Small constant for numerical stability in Adam updates.
+    gradient_method : str
+        Method used for gradient calculation ('numerical' or 'analytic').
     """
 
     def __init__(
         self,
-        system,
-        tolerance=1e-6,
-        max_iters=1000,
-        gradient_delta=1e-6,
-        lr=0.01,
-        beta1=0.9,
-        beta2=0.999,
-        epsilon=1e-8,
-        gradient_method="numerical",
-    ):
+        system: TieredPricingSystem,
+        tolerance: float = 1e-6,
+        max_iters: int = 1000,
+        gradient_delta: float = 1e-6,
+        lr: float = 0.01,
+        beta1: float = 0.9,
+        beta2: float = 0.999,
+        epsilon: float = 1e-8,
+        gradient_method: str = "numerical",
+    ) -> None:
         self.system = system
         self.tolerance = tolerance
         self.max_iters = max_iters
@@ -207,14 +229,26 @@ class GradientDescentAdam:
             lr
             * min(system.costs)
             * (max(system.costs) / min(system.costs)) ** (system.lam),
-        )  # TODO: Better expressio
+        )  # TODO: IMPROVE THIS
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
         self.gradient_method = gradient_method
 
-    def gradient(self, prices_unsorted):
-        """Compute the gradient of the profit function."""
+    def gradient(self, prices_unsorted: List[float]) -> List[float]:
+        """
+        Compute the analytical gradient of the profit function.
+
+        Parameters
+        ----------
+        prices_unsorted : List[float]
+            Current prices for each tier in unsorted order.
+
+        Returns
+        -------
+        List[float]
+            The gradient vector of the profit function with respect to prices.
+        """
         sorted_indices = np.argsort(self.system.utils)
         utils = np.array(self.system.utils)[sorted_indices]
         prices = np.array(prices_unsorted)[sorted_indices]
@@ -300,8 +334,20 @@ class GradientDescentAdam:
         # print(grad)
         return grad
 
-    def numerical_gradient(self, prices):
-        """Compute the numerical gradient of the profit function."""
+    def numerical_gradient(self, prices: List[float]) -> List[float]:
+        """
+        Compute the numerical gradient of the profit function.
+
+        Parameters
+        ----------
+        prices : List[float]
+            Current prices for each tier.
+
+        Returns
+        -------
+        List[float]
+            The numerical gradient vector of the profit function.
+        """
         grad = [0.0] * len(prices)
         for i in range(len(prices)):
             vec = [0.0] * len(prices)
@@ -312,9 +358,20 @@ class GradientDescentAdam:
             ) / self.gradient_delta
         return grad
 
-    def maximize(self):
+    def maximize(self) -> None:
         """
-        Perform optimization using Adam.
+        Perform optimization using Adam algorithm.
+
+        Updates
+        -------
+        self.prices : List[float]
+            Optimized prices after convergence or reaching maximum iterations.
+        self.profit : float
+            Maximum profit achieved during optimization.
+        self.profit_history : List[float]
+            History of profit values at each iteration.
+        self.price_history : List[List[float]]
+            History of price vectors at each iteration.
         """
         self.prices = list(self.system.costs)
         self.profit = self.system.profit(self.prices)
