@@ -3,6 +3,21 @@ import numpy as np
 
 
 class Customer:
+    """
+    Customer with given distribution of valuations
+
+    Parameters
+    ----------
+    mu : float
+        Mean value for the distribution.
+    sigma : float
+        Standard deviation for the distribution.
+    lam : float
+        Lambda parameter for utility exponent.
+    pdf_type : str
+        Type of distribution ('uniform' or 'normal').
+    """
+
     def __init__(self, mu: float, sigma: float, lam: float,
                  pdf_type: str = 'uniform') -> None:
         self.mu = mu
@@ -42,7 +57,6 @@ class Customer:
         ----------
         costs : List[float]
             The costs for each tier.
-
         prices : List[float]
             The prices for each tier.
 

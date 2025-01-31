@@ -1,9 +1,35 @@
+from typing import List
 import numpy as np
 from tqdm import tqdm
 from pricing.static.system import TieredPricingSystem
 
 
 class BatchGradientDescent:
+    """
+    Class for performing stochastic gradient descent with batches
+
+    Parameters
+    ----------
+    business : Any
+        An object representing the business containing costs and a customer.
+    batch_size : int
+        Number of samples per batch for gradient estimation.
+    max_iters : int
+        Maximum number of iterations for gradient descent.
+    gradient_delta : float
+        Delta used for numerical gradient approximation.
+    lr : int, optional
+        Initial learning rate value.
+    beta1 : float
+        Exponential decay rate for the first moment estimates.
+    beta2 : float
+        Exponential decay rate for the second moment estimates.
+    epsilon : float
+        Small constant for numerical stability in Adam-like updates.
+    smoothing_alpha : float
+        Smoothing factor for the estimated gradient.
+    """
+
     def __init__(
         self,
         business,
@@ -11,10 +37,10 @@ class BatchGradientDescent:
         max_iters: int = 1500,
         gradient_delta: float = 1e-1,
         lr: int = None,
-        beta1=0.9,
-        beta2=0.999,
-        epsilon=1e-8,
-        smoothing_alpha=0,
+        beta1: float = 0.9,
+        beta2: float = 0.999,
+        epsilon: float = 1e-8,
+        smoothing_alpha: float = 0,
     ) -> None:
         self.business = business
         self.system = TieredPricingSystem(
@@ -36,7 +62,20 @@ class BatchGradientDescent:
         if lr is None:
             self.learning_rate = min(business.costs) / 5
 
-    def estimate_gradient(self):
+    def estimate_gradient(self) -> List[float]:
+        """
+        Estimate the gradient of the profit function using batch samples.
+
+        Returns
+        -------
+        List[float]
+            The (possibly smoothed) gradient vector for each price tier.
+
+        Updates
+        -------
+        self.smoothed_grad : List[float]
+            Stores the updated smoothed gradient vector.
+        """
         # Use partial or stale data
         grad = [0.0] * len(self.prices)
         for i in range(len(self.prices)):
@@ -60,6 +99,20 @@ class BatchGradientDescent:
         return self.smoothed_grad
 
     def maximize(self) -> None:
+        """
+        Run the batch gradient descent process to maximize profit.
+
+        Updates
+        -------
+        self.prices : List[float]
+            Optimized prices over iterations.
+        self.profit : float
+            Final profit result.
+        self.profit_history : List[float]
+            Record of profit at each iteration.
+        self.price_history : List[List[float]]
+            Record of prices at each iteration.
+        """
         self.prices = list(self.business.costs)
         self.profit = self.business.sell_n(self.prices, self.batch_size)[0]
         self.profit_history = [self.profit]
