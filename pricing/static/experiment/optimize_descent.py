@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from pricing.static.optimize import GradientDescent, DualAnnealing, GradientDescentAdam
 from pricing.static.system import TieredPricingSystem
 from pricing.util.simulate import simulate_profits
-from pricing.util.visualize import plot_descent_two_tiers, plot_descent_one_tier
+from pricing.util.visualize import plot_descent_two_tiers, plot_descent_one_tier, compare_descents_two_tiers
 
 
 def test_descent(system, bounds, n_samples):
@@ -60,28 +60,31 @@ def test_lr():
 def main():
     np.set_printoptions(legacy='1.25')
     # test_lr()
-    C = [3]
+    C = [1, 3]
     lambda_value = 5/6
     mu = 2
     sigma = 1
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma)
     profits, samples = simulate_profits(system ,n_samples=100)
 
-    descent = GradientDescentAdam(system)
-    descent.maximize()
+    descent1 = GradientDescentAdam(system, gradient_method='numerical')
+    descent1.maximize()
+
+    descent2 = GradientDescentAdam(system, gradient_method='analytic')
+    descent2.maximize()
 
     dual = DualAnnealing(system)
     dual.maximize()
 
-    print(descent.profit)
+    print(descent1.profit)
     print(dual.profit)
 
-    print(system.tier_probabilities(descent.prices))
+    print(system.tier_probabilities(descent1.prices))
     print(system.tier_probabilities(dual.prices))
 
-    print(descent.prices)
+    print(descent1.prices)
     print(dual.prices)
-    plot_descent_one_tier(samples[0], profits, descent, f"costs: {list(system.costs)} lambda: {lambda_value} profit: {descent.profit}")
+    compare_descents_two_tiers(samples[0], samples[1], profits, descent1, descent2, f"costs: {list(system.costs)} lambda: {lambda_value} profit: {descent1.profit}")
     plt.show()
 
 

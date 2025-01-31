@@ -178,7 +178,7 @@ class GradientDescentAdam:
     to optimize tiered pricing.
     """
     def __init__(self, system, tolerance=1e-6, max_iters=1000, gradient_delta=1e-6,
-                 lr=0.01, beta1=0.9, beta2=0.999, epsilon=1e-8):
+                 lr=0.01, beta1=0.9, beta2=0.999, epsilon=1e-8, gradient_method='numerical'):
         self.system = system
         self.tolerance = tolerance
         self.max_iters = max_iters
@@ -189,6 +189,7 @@ class GradientDescentAdam:
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
+        self.gradient_method = gradient_method
 
     def gradient(self, prices_unsorted):
         """Compute the gradient of the profit function."""
@@ -242,17 +243,17 @@ class GradientDescentAdam:
             for j in range(0, len(prices) + 1):
                 d_end = (t_grads[j+1][i+1] if i+1 in t_grads[j+1] else 0)
                 d_start = (t_grads[j][i+1] if i+1 in t_grads[j] else 0)
-                print(d_start)
-                print(d_end)
-                print(intervals)
+                #print(d_start)
+                #print(d_end)
+                #print(intervals)
                 prb_grad = (d_end if intervals[j][1] <= end else 0) - (d_start if intervals[j][0] >= start else 0)
                 prb_grads.append(prb_grad * point_prob if (intervals[j][0] < intervals[j][1]) else 0)
-            print(prb_grads)
+            #print(prb_grads)
             grad[i] = sum((prices - costs) * (np.array(prb_grads[1:]))) + max((min(intervals[i+1][1], end) - max(intervals[i+1][0], start))
                                     * point_prob, 0)
 
-        print(t_grads)
-        print(grad)
+        #print(t_grads)
+        #print(grad)
         return grad
 
     def numerical_gradient(self, prices):
@@ -283,7 +284,7 @@ class GradientDescentAdam:
 
         for _ in range(self.max_iters):
             t += 1
-            grad = np.array(self.gradient(self.prices))
+            grad = np.array(self.gradient(self.prices)) if self.gradient_method == 'analytic' else np.array(self.numerical_gradient(self.prices))
 
             # Update moments
             m_t = self.beta1 * m_t + (1 - self.beta1) * grad

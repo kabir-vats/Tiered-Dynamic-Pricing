@@ -151,6 +151,42 @@ def plot_descent_two_tiers(
     return fig
 
 
+def compare_descents_two_tiers(
+    X: list | np.ndarray,
+    Y: list | np.ndarray,
+    Z: list | np.ndarray,
+    descent1: GradientDescent,
+    descent2: GradientDescent,
+    title: str,
+    azim: int = 225,
+    elev: int = 25,
+    cmap: str = 'plasma'
+) -> plt.Figure:
+
+    x1 = [price[0] for price in descent1.price_history]
+    y1 = [price[1] for price in descent1.price_history]
+    z1 = descent1.profit_history
+    x2 = [price[0] for price in descent2.price_history]
+    y2 = [price[1] for price in descent2.price_history]
+    z2 = descent2.profit_history
+
+    fig = surface_plot(X, Y, Z, "Tier 1 Price", "Tier 2 Price",
+                       "Expected Profit / Customer",
+                       title=title,
+                       elev=15, alpha=0.5)
+
+    ax = fig.axes[0]
+
+    ax.plot(x1, y1, z1, color='green', marker='o', linewidth='0.5', markersize=0.7)
+
+    ax.plot(x2, y2, z2, color='blue', marker='o', linewidth='0.5', markersize=0.7)
+
+    ax.plot(x1[-1], y1[-1], z1[-1], 'ro')
+    ax.plot(x2[-1], y2[-1], z2[-1], 'ro')
+
+    return fig
+
+
 def plot_descent_one_tier(
     X: list | np.ndarray,
     Y: list | np.ndarray,
