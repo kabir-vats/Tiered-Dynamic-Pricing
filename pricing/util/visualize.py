@@ -14,7 +14,7 @@ def surface_plot(
     title: str,
     azim: int = 225,
     elev: int = 25,
-    cmap: str = 'plasma',
+    cmap: str = "plasma",
     alpha: float = 0.9,
 ) -> plt.Figure:
     """
@@ -63,7 +63,7 @@ def surface_plot(
     Z_grid = Z_arr.reshape(X_grid.shape).T
 
     fig = plt.figure(figsize=(12, 8))
-    ax = fig.add_subplot(111, projection='3d')
+    ax = fig.add_subplot(111, projection="3d")
 
     surface = ax.plot_surface(X_grid, Y_grid, Z_grid, cmap=cmap, alpha=alpha)
 
@@ -85,16 +85,13 @@ def surface_plot(
 
     return fig
 
+
 def line_plot(
-    X: list | np.ndarray,
-    Y: list | np.ndarray,
-    xlabel: str,
-    ylabel: str,
-    title: str
+    X: list | np.ndarray, Y: list | np.ndarray, xlabel: str, ylabel: str, title: str
 ):
     """
     Create a 2D line plot from the given input data.
-    
+
     Parameters
     ----------
     X : list or numpy.ndarray
@@ -107,7 +104,7 @@ def line_plot(
         Label for the y-axis.
     title : str
         Title of the plot.
-    
+
     Returns
     -------
     fig : matplotlib.figure.Figure
@@ -130,23 +127,30 @@ def plot_descent_two_tiers(
     title: str,
     azim: int = 225,
     elev: int = 25,
-    cmap: str = 'plasma'
+    cmap: str = "plasma",
 ) -> plt.Figure:
 
     x = [price[0] for price in descent.price_history]
     y = [price[1] for price in descent.price_history]
     z = descent.profit_history
 
-    fig = surface_plot(X, Y, Z, "Tier 1 Price", "Tier 2 Price",
-                       "Expected Profit / Customer",
-                       title=title,
-                       elev=15, alpha=0.5)
+    fig = surface_plot(
+        X,
+        Y,
+        Z,
+        "Tier 1 Price",
+        "Tier 2 Price",
+        "Expected Profit / Customer",
+        title=title,
+        elev=15,
+        alpha=0.5,
+    )
 
     ax = fig.axes[0]
 
-    ax.plot(x, y, z, color='green', marker='o', linewidth='0.5', markersize=0.7)
+    ax.plot(x, y, z, color="green", marker="o", linewidth="0.5", markersize=0.7)
 
-    ax.plot(x[-1], y[-1], z[-1], 'ro')
+    ax.plot(x[-1], y[-1], z[-1], "ro")
 
     return fig
 
@@ -160,7 +164,7 @@ def compare_descents_two_tiers(
     title: str,
     azim: int = 225,
     elev: int = 25,
-    cmap: str = 'plasma'
+    cmap: str = "plasma",
 ) -> plt.Figure:
 
     x1 = [price[0] for price in descent1.price_history]
@@ -170,19 +174,26 @@ def compare_descents_two_tiers(
     y2 = [price[1] for price in descent2.price_history]
     z2 = descent2.profit_history
 
-    fig = surface_plot(X, Y, Z, "Tier 1 Price", "Tier 2 Price",
-                       "Expected Profit / Customer",
-                       title=title,
-                       elev=15, alpha=0.5)
+    fig = surface_plot(
+        X,
+        Y,
+        Z,
+        "Tier 1 Price",
+        "Tier 2 Price",
+        "Expected Profit / Customer",
+        title=title,
+        elev=15,
+        alpha=0.5,
+    )
 
     ax = fig.axes[0]
 
-    ax.plot(x1, y1, z1, color='green', marker='o', linewidth='0.5', markersize=0.7)
+    ax.plot(x1, y1, z1, color="green", marker="o", linewidth="0.5", markersize=0.7)
 
-    ax.plot(x2, y2, z2, color='blue', marker='o', linewidth='0.5', markersize=0.7)
+    ax.plot(x2, y2, z2, color="blue", marker="o", linewidth="0.5", markersize=0.7)
 
-    ax.plot(x1[-1], y1[-1], z1[-1], 'ro')
-    ax.plot(x2[-1], y2[-1], z2[-1], 'ro')
+    ax.plot(x1[-1], y1[-1], z1[-1], "ro")
+    ax.plot(x2[-1], y2[-1], z2[-1], "ro")
 
     return fig
 
@@ -194,7 +205,7 @@ def plot_descent_one_tier(
     title: str,
     azim: int = 225,
     elev: int = 25,
-    cmap: str = 'plasma'
+    cmap: str = "plasma",
 ) -> plt.Figure:
 
     x = [price[0] for price in descent.price_history]
@@ -204,6 +215,6 @@ def plot_descent_one_tier(
 
     ax = fig.axes[0]
 
-    ax.plot(x, z, color='green', marker='o', linewidth='0.5', markersize=0.7)
+    ax.plot(x, z, color="green", marker="o", linewidth="0.5", markersize=0.7)
 
     return fig

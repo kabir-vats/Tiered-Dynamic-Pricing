@@ -11,10 +11,10 @@ from pricing.util.visualize import plot_descent_two_tiers
 
 
 def main():
-    np.set_printoptions(legacy='1.25')
+    np.set_printoptions(legacy="1.25")
     # test_lr()
     C = [1, 4]
-    lambda_value = 2/3
+    lambda_value = 2 / 3
     mu = 2
     sigma = 1
     customer = Customer(mu, sigma, lambda_value)
@@ -25,7 +25,7 @@ def main():
     descent = GradientDescentAdam(system)
 
     dual = DualAnnealing(system)
-    profits, samples = simulate_profits(system ,n_samples=100)
+    profits, samples = simulate_profits(system, n_samples=100)
 
     controller.maximize()
 
@@ -41,7 +41,13 @@ def main():
 
     print(descent.prices)
     print(dual.prices)
-    plot_descent_two_tiers(samples[0], samples[1], profits, controller, f"Costs: {list(system.costs)} Lambda: {lambda_value} Profit: {controller.profit}")
+    plot_descent_two_tiers(
+        samples[0],
+        samples[1],
+        profits,
+        controller,
+        f"Costs: {list(system.costs)} Lambda: {lambda_value} Prof: {controller.profit}",
+    )
     # profit: {descent.profit}")
     plt.show()
 

@@ -4,13 +4,26 @@ from pricing.static.system import TieredPricingSystem
 
 
 class BatchGradientDescent:
-    def __init__(self, business, batch_size: int = 1000,
-                 max_iters: int = 1500, gradient_delta: float = 1e-1,
-                 lr: int = None, beta1=0.9, beta2=0.999, epsilon=1e-8, smoothing_alpha=0) -> None:
+    def __init__(
+        self,
+        business,
+        batch_size: int = 1000,
+        max_iters: int = 1500,
+        gradient_delta: float = 1e-1,
+        lr: int = None,
+        beta1=0.9,
+        beta2=0.999,
+        epsilon=1e-8,
+        smoothing_alpha=0,
+    ) -> None:
         self.business = business
-        self.system = TieredPricingSystem(business.costs, len(business.costs),
-                                          business.customer.lam, business.customer.mu,
-                                          business.customer.sigma)
+        self.system = TieredPricingSystem(
+            business.costs,
+            len(business.costs),
+            business.customer.lam,
+            business.customer.mu,
+            business.customer.sigma,
+        )
         self.max_iters = max_iters
         self.gradient_delta = gradient_delta
         self.batch_size = batch_size
@@ -31,8 +44,9 @@ class BatchGradientDescent:
             vec[i] = 1.0
             # Sample fewer data points
             grad[i] = (
-                self.business.sell_n(self.prices + self.gradient_delta
-                                     * np.asarray(vec), self.batch_size)[0]
+                self.business.sell_n(
+                    self.prices + self.gradient_delta * np.asarray(vec), self.batch_size
+                )[0]
                 - self.business.sell_n(self.prices, self.batch_size)[0]
             ) / self.gradient_delta
         if self.smoothed_grad is None:
@@ -61,14 +75,15 @@ class BatchGradientDescent:
 
             # Update moments
             m_t = self.beta1 * m_t + (1 - self.beta1) * grad
-            v_t = self.beta2 * v_t + (1 - self.beta2) * (grad ** 2)
+            v_t = self.beta2 * v_t + (1 - self.beta2) * (grad**2)
 
             # Bias correction
-            m_t_hat = m_t / (1 - self.beta1 ** t)
-            v_t_hat = v_t / (1 - self.beta2 ** t)
+            m_t_hat = m_t / (1 - self.beta1**t)
+            v_t_hat = v_t / (1 - self.beta2**t)
 
-            prices_next = np.array(self.prices) + (self.learning_rate * m_t_hat /
-                                                   (np.sqrt(v_t_hat) + self.epsilon))
+            prices_next = np.array(self.prices) + (
+                self.learning_rate * m_t_hat / (np.sqrt(v_t_hat) + self.epsilon)
+            )
 
             self.prices = prices_next.tolist()
             self.profit = self.system.profit(self.prices)
