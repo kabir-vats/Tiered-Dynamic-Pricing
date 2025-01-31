@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 from typing import List
 from pricing.static.system import TieredPricingSystem
 from scipy.optimize import dual_annealing, OptimizeResult
@@ -189,16 +190,69 @@ class GradientDescentAdam:
         self.beta2 = beta2
         self.epsilon = epsilon
 
-    def gradient(self, prices):
+    def gradient(self, prices_unsorted):
         """Compute the gradient of the profit function."""
+        sorted_indices = np.argsort(self.system.utils)
+        utils = np.array(self.system.utils)[sorted_indices]
+        prices = np.array(prices_unsorted)[sorted_indices]
+        costs = np.array(self.system.costs)[sorted_indices]
+
+        thresholds = [-sys.float_info.max]
+        t_grads = [{-1: 0, 0: 0}]
+
+        for i in range(self.system.tiers):
+            if i == 0:
+                thresholds.append(prices[0] / utils[0])
+                t_grads.append({0: 0, 1: 1/utils[0]})
+            else:
+                intersection = (prices[i] - prices[i - 1]) / (
+                    utils[i] - utils[i-1]
+                )
+                t_grad = {i-1: -1 / (utils[i] - utils[i-1]), i: 1 / (utils[i] - utils[i-1])}
+                j = 0
+                while intersection < thresholds[i - j]:
+                    j += 1
+                    if i == j:
+                        intersection = prices[i] / utils[i]
+                        t_grad = {0: 0, i: 1 / utils[i]}
+                        break
+                    else:
+                        intersection = (prices[i] - prices[i - j - 1]) / (
+                            utils[i] - utils[i-j-1]
+                        )
+                        t_grad = {i-j-1: -1 / (utils[i] - utils[i-j-1]), i: 1 / (utils[i] - utils[i-j-1])}
+                thresholds.append(intersection)
+                t_grads.append(t_grad)
+
+        for i in range(self.system.tiers):
+            if thresholds[self.system.tiers - i] < thresholds[self.system.tiers - i - 1]:
+                thresholds[self.system.tiers - i - 1] = thresholds[self.system.tiers - i]
+                t_grads[self.system.tiers - i - 1] = t_grads[self.system.tiers - i]
+
+        t_grads.append({})
+        intervals = [(thresholds[i], thresholds[i + 1]) for i in range(self.system.tiers)]
+        intervals.append((thresholds[-1], sys.float_info.max))
+
         grad = [0.0] * len(prices)
+
+        start, end = self.system.mu - self.system.sigma, self.system.mu + self.system.sigma
+        point_prob = 1 / (end - start)
         for i in range(len(prices)):
-            vec = [0.0] * len(prices)
-            vec[i] = 1.0
-            grad[i] = (
-                self.system.profit(prices + self.gradient_delta * np.asarray(vec)) -
-                self.system.profit(prices)
-            ) / self.gradient_delta
+            prb_grads = []
+            for j in range(0, len(prices) + 1):
+                d_end = (t_grads[j+1][i+1] if i+1 in t_grads[j+1] else 0)
+                d_start = (t_grads[j][i+1] if i+1 in t_grads[j] else 0)
+                print(d_start)
+                print(d_end)
+                print(intervals)
+                prb_grad = (d_end if intervals[j][1] <= end else 0) - (d_start if intervals[j][0] >= start else 0)
+                prb_grads.append(prb_grad * point_prob if (intervals[j][0] < intervals[j][1]) else 0)
+            print(prb_grads)
+            grad[i] = sum((prices - costs) * (np.array(prb_grads[1:]))) + max((min(intervals[i+1][1], end) - max(intervals[i+1][0], start))
+                                    * point_prob, 0)
+
+        print(t_grads)
+        print(grad)
         return grad
 
     def numerical_gradient(self, prices):
@@ -229,7 +283,7 @@ class GradientDescentAdam:
 
         for _ in range(self.max_iters):
             t += 1
-            grad = np.array(self.numerical_gradient(self.prices))
+            grad = np.array(self.gradient(self.prices))
 
             # Update moments
             m_t = self.beta1 * m_t + (1 - self.beta1) * grad

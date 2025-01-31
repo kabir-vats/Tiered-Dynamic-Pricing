@@ -30,9 +30,7 @@ class TieredPricingSystem:
     def __init__(self, costs: List[float], tiers: int, lam: float,
                  mu: float, sigma: float, pdf_type: str = 'uniform') -> None:
         self.costs = costs
-
         self.utils = [min(costs) * (cost / min(costs))**lam for cost in costs]
-
         self.tiers = tiers
         self.lam = lam
         self.mu = mu
