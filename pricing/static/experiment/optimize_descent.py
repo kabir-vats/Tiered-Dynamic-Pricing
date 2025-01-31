@@ -60,17 +60,17 @@ def test_lr():
 def main():
     np.set_printoptions(legacy='1.25')
     # test_lr()
-    C = [1, 3]
-    lambda_value = 5/6
+    C = [1, 4]
+    lambda_value = 2/3
     mu = 2
     sigma = 1
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma)
     profits, samples = simulate_profits(system ,n_samples=100)
 
-    descent1 = GradientDescentAdam(system, gradient_method='numerical')
+    descent1 = GradientDescentAdam(system, gradient_method='numerical', max_iters=100)
     descent1.maximize()
 
-    descent2 = GradientDescentAdam(system, gradient_method='analytic')
+    descent2 = GradientDescentAdam(system, gradient_method='analytic', max_iters=100)
     descent2.maximize()
 
     dual = DualAnnealing(system)

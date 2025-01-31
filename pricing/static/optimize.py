@@ -199,29 +199,29 @@ class GradientDescentAdam:
         costs = np.array(self.system.costs)[sorted_indices]
 
         thresholds = [-sys.float_info.max]
-        t_grads = [{-1: 0, 0: 0}]
+        t_grads = [{}]
 
         for i in range(self.system.tiers):
             if i == 0:
                 thresholds.append(prices[0] / utils[0])
-                t_grads.append({0: 0, 1: 1/utils[0]})
+                t_grads.append({1: 1/utils[0]})
             else:
                 intersection = (prices[i] - prices[i - 1]) / (
                     utils[i] - utils[i-1]
                 )
-                t_grad = {i-1: -1 / (utils[i] - utils[i-1]), i: 1 / (utils[i] - utils[i-1])}
+                t_grad = {i: -1 / (utils[i] - utils[i-1]), i+1: 1 / (utils[i] - utils[i-1])}
                 j = 0
                 while intersection < thresholds[i - j]:
                     j += 1
                     if i == j:
                         intersection = prices[i] / utils[i]
-                        t_grad = {0: 0, i: 1 / utils[i]}
+                        t_grad = {i+1: 1 / utils[i]}
                         break
                     else:
                         intersection = (prices[i] - prices[i - j - 1]) / (
                             utils[i] - utils[i-j-1]
                         )
-                        t_grad = {i-j-1: -1 / (utils[i] - utils[i-j-1]), i: 1 / (utils[i] - utils[i-j-1])}
+                        t_grad = {i-j: -1 / (utils[i] - utils[i-j-1]), i+1: 1 / (utils[i] - utils[i-j-1])}
                 thresholds.append(intersection)
                 t_grads.append(t_grad)
 
@@ -235,6 +235,7 @@ class GradientDescentAdam:
         intervals.append((thresholds[-1], sys.float_info.max))
 
         grad = [0.0] * len(prices)
+        print(t_grads)
 
         start, end = self.system.mu - self.system.sigma, self.system.mu + self.system.sigma
         point_prob = 1 / (end - start)
@@ -248,10 +249,10 @@ class GradientDescentAdam:
                 #print(intervals)
                 prb_grad = (d_end if intervals[j][1] <= end else 0) - (d_start if intervals[j][0] >= start else 0)
                 prb_grads.append(prb_grad * point_prob if (intervals[j][0] < intervals[j][1]) else 0)
-            #print(prb_grads)
+            print(prb_grads)
             grad[i] = sum((prices - costs) * (np.array(prb_grads[1:]))) + max((min(intervals[i+1][1], end) - max(intervals[i+1][0], start))
                                     * point_prob, 0)
-
+            print(sum((prices - costs) * (np.array(prb_grads[1:]))))
         #print(t_grads)
         #print(grad)
         return grad
@@ -284,6 +285,7 @@ class GradientDescentAdam:
 
         for _ in range(self.max_iters):
             t += 1
+            print("prices " + str(self.prices))
             grad = np.array(self.gradient(self.prices)) if self.gradient_method == 'analytic' else np.array(self.numerical_gradient(self.prices))
 
             # Update moments
