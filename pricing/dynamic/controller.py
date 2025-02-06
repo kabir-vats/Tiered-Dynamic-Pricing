@@ -76,12 +76,10 @@ class BatchGradientDescent:
         self.smoothed_grad : List[float]
             Stores the updated smoothed gradient vector.
         """
-        # Use partial or stale data
         grad = [0.0] * len(self.prices)
         for i in range(len(self.prices)):
             vec = [0.0] * len(self.prices)
             vec[i] = 1.0
-            # Sample fewer data points
             grad[i] = (
                 self.business.sell_n(
                     self.prices + self.gradient_delta * np.asarray(vec), self.batch_size
