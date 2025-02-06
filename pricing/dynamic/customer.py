@@ -20,9 +20,9 @@ class Customer:
 
     def __init__(self, mu: float, sigma: float, lam: float,
                  pdf_type: str = 'uniform') -> None:
-        self.mu = mu
-        self.sigma = sigma
-        self.lam = lam
+        self.__mu = mu
+        self.__sigma = sigma
+        self.__lam = lam
         self.pdf_type = pdf_type
 
     def utility(self, cost: float, base_cost: float, price: float,
@@ -47,7 +47,7 @@ class Customer:
             The utility of the customer.
         """
 
-        return valuation_param * (cost / base_cost)**self.lam - price
+        return valuation_param * (cost / base_cost)**self.__lam - price
 
     def choose_tier(self, costs: List[float], prices: List[float]) -> int:
         """
@@ -67,10 +67,10 @@ class Customer:
         """
 
         if self.pdf_type == 'uniform':
-            valuation_param = np.random.uniform(self.mu - self.sigma,
-                                                self.mu + self.sigma)
+            valuation_param = np.random.uniform(self.__mu - self.__sigma,
+                                                self.__mu + self.__sigma)
         else:
-            valuation_param = np.random.normal(self.mu, self.sigma)
+            valuation_param = np.random.normal(self.__mu, self.__sigma)
 
         base_cost = min(costs)
 
