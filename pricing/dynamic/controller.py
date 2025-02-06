@@ -87,31 +87,17 @@ class BatchGradientDescent:
             profit, choice = self.business.sell_once(self.prices)
             profits.append(profit)
             choices.append(choice)
-            # Update parameter estimates
             self.estimator.update(self.prices, choice, profit)
-        
-        # Get current parameter estimates
+
+        self.profit_history.append(np.mean(profits))
+
+        # Update system parameter estimates
         mu_est, sigma_est, lam_est = self.estimator.get_parameters()
-        
-        # Create temporary system with estimated parameters
-        temp_system = TieredPricingSystem(
-            self.business.costs,
-            len(self.business.costs),
-            lam_est,
-            mu_est,
-            sigma_est,
-            'uniform'
-        )
-        
-        # Use analytical gradient with estimated parameters
-        sorted_indices = np.argsort(self.mock_system.utils)
-        utils = np.array(self.mock_system.utils)[sorted_indices]
-        prices = np.array(self.prices)[sorted_indices]
-        costs = np.array(self.business.costs)[sorted_indices]
-        
-        # Compute analytical gradient using estimated parameters
-        # (Similar to GradientDescentAdam's gradient calculation)
-        # ...rest of gradient calculation...
+        self.mock_system.mu = mu_est
+        self.mock_system.sigma = sigma_est
+        self.mock_system.lam = lam_est
+
+        analytical_grad = self.mock_descent.estimate_gradient()
 
         # Combine with empirical gradient for robustness
         empirical_grad = self._empirical_gradient(profits, choices)
