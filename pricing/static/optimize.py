@@ -332,7 +332,11 @@ class GradientDescentAdam:
             print(sum((prices - costs) * (np.array(prb_grads[1:]))))
         # print(t_grads)
         # print(grad)
-        return grad
+
+        grad_ordered = []
+        for i, idx in enumerate(sorted_indices):
+            grad[idx + 1] = grad[i + 1]
+        return grad_ordered
 
     def numerical_gradient(self, prices: List[float]) -> List[float]:
         """
