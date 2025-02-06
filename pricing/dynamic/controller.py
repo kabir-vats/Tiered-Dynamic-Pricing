@@ -35,7 +35,7 @@ class BatchGradientDescent:
     def __init__(
         self,
         business,
-        batch_size: int = 1000,
+        batch_size: int = 10,
         max_iters: int = 1500,
         gradient_delta: float = 1e-1,
         lr: int = None,
@@ -92,17 +92,14 @@ class BatchGradientDescent:
         self.profit_history.append(np.mean(profits))
 
         # Update system parameter estimates
-        mu_est, sigma_est, lam_est = self.estimator.get_parameters()
-        self.mock_system.mu = mu_est
-        self.mock_system.sigma = sigma_est
-        self.mock_system.lam = lam_est
+        self.mock_system.update_parameters(*self.estimator.get_parameters())
 
         analytical_grad = self.mock_descent.estimate_gradient()
 
         # Combine with empirical gradient for robustness
         empirical_grad = self._empirical_gradient(profits, choices)
         combined_grad = [
-            0.7 * ag + 0.3 * eg 
+            0.7 * ag + 0.3 * eg
             for ag, eg in zip(analytical_grad, empirical_grad)
         ]
         
