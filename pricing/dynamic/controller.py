@@ -57,22 +57,16 @@ class BatchGradientDescent:
         if lr is None:
             self.learning_rate = min(business.costs) / 5
 
-        # Add Bayesian estimator
-        self.estimator = BayesianEstimator(len(business.costs))
-
-        # Get current parameter estimates
-        mu_est, sigma_est, lam_est = self.estimator.get_parameters()
-
-        # Create system with estimated parameters
         self.mock_system = TieredPricingSystem(
             self.business.costs,
             len(self.business.costs),
-            lam_est,
-            mu_est,
-            sigma_est,
+            1,
+            1,
+            1,
             'uniform'
-        )
+        )  # dummy values for mu, sigma, lambda
 
+        self.estimator = BayesianEstimator(self.mock_system)
         self.mock_descent = GradientDescentAdam(self.mock_system)
 
     def estimate_gradient(self) -> List[float]:
@@ -91,9 +85,6 @@ class BatchGradientDescent:
 
         self.profit_history.append(np.mean(profits))
 
-        # Update system parameter estimates
-        self.mock_system.update_parameters(*self.estimator.get_parameters())
-
         analytical_grad = self.mock_descent.estimate_gradient()
 
         # Combine with empirical gradient for robustness
@@ -102,9 +93,9 @@ class BatchGradientDescent:
             0.7 * ag + 0.3 * eg
             for ag, eg in zip(analytical_grad, empirical_grad)
         ]
-        
+
         return combined_grad
-    
+
     def _empirical_gradient(self, profits: List[float], 
                           choices: List[int]) -> List[float]:
         """Compute empirical gradient from batch samples."""

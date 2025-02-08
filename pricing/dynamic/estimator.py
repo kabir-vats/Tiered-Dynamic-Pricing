@@ -13,28 +13,29 @@ class BayesianEstimator:
         self,
         n_tiers: int,
         system: TieredPricingSystem,
-        prior_confidence: float = 10.0
+        mu_range: Tuple[float, float] = (0, 100),
+        sigma_range: Tuple[float, float] = (0, 100),
+        lam_range: Tuple[float, float] = (0, 1),
     ):
-        # Initialize priors for mu and sigma (normal-inverse-gamma)
-        self.beta_0 = prior_confidence
-        self.alpha_0 = prior_confidence
-
-        
-        # Initialize prior for lambda (gamma distribution)
-        self.lam_alpha = prior_confidence
-        self.lam_beta = prior_confidence / prior_lam
-
+        self.param_priors = 1/np.prod([r[1] - r[0] for r in (mu_range, sigma_range, 
+                                                             lam_range)])  # Uniform prior
         self.system = system
-        
+        self.mu_range = mu_range
+        self.sigma_range = sigma_range
+        self.lam_range = lam_range
+
         # Maintain history of choices for updating
         self.choice_history: List[Tuple[List[float], int]] = []
         
-    def update(self, prices: List[float], chosen_tier: int, utility: float) -> None:
+    def update(self, prices: List[float], chosen_tier: int) -> None:
         """
         Update parameter estimates based on a new observation.
         """
         self.choice_history.append((prices, chosen_tier))
-        
+
+        curr_prob = self.system.probabilities(prices)[chosen_tier] # P(tier | params)
+
+
         # Update lambda estimate using MAP estimation
         # Assuming customer chose optimal tier given their valuation parameter
         costs_ratio = max(prices) / min(prices)
