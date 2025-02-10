@@ -25,12 +25,12 @@ def main():
     descent = GradientDescentAdam(system)
 
     dual = DualAnnealing(system)
-    profits, samples = simulate_profits(system, n_samples=100)
 
     controller.maximize()
 
     descent.maximize()
     dual.maximize()
+    profits, samples = simulate_profits(system, n_samples=100)
 
     print(controller.profit)
     print(descent.profit)

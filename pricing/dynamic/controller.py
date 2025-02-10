@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 from pricing.static.optimize import GradientDescentAdam
 from pricing.static.system import TieredPricingSystem
-from pricing.estimators import BayesianEstimator
+from pricing.dynamic.estimator import BayesianEstimator
 
 
 class BatchGradientDescent:
@@ -38,7 +38,7 @@ class BatchGradientDescent:
         batch_size: int = 10,
         max_iters: int = 1500,
         gradient_delta: float = 1e-1,
-        lr: int = None,
+        lr: int = 0,
         beta1: float = 0.9,
         beta2: float = 0.999,
         epsilon: float = 1e-8,
@@ -78,23 +78,31 @@ class BatchGradientDescent:
         profits = []
         choices = []
         for _ in range(self.batch_size):
-            profit, choice = self.business.sell_once(self.prices)
+            profit, choice = self.business.sell(self.prices)
             profits.append(profit)
             choices.append(choice)
-            self.estimator.update(self.prices, choice, profit)
+        
+        self.estimator.update(self.prices, choices)
 
-        self.profit_history.append(np.mean(profits))
+        # self.profit_history.append(np.mean(profits))
+        print(choices)
+        print(self.prices)
+        print(self.estimator.a_mean)
+        print(self.estimator.b_mean)
+        print(self.estimator.lambda_mean)
+        input('cont')
 
-        analytical_grad = self.mock_descent.estimate_gradient()
+
+        return self.mock_descent.gradient(self.prices)
 
         # Combine with empirical gradient for robustness
-        empirical_grad = self._empirical_gradient(profits, choices)
+        '''empirical_grad = self._empirical_gradient(profits, choices)
         combined_grad = [
             0.7 * ag + 0.3 * eg
             for ag, eg in zip(analytical_grad, empirical_grad)
         ]
 
-        return combined_grad
+        return combined_grad'''
 
     def _empirical_gradient(self, profits: List[float], 
                           choices: List[int]) -> List[float]:
@@ -124,7 +132,7 @@ class BatchGradientDescent:
         self.price_history : List[List[float]]
             Record of prices at each iteration.
         """
-        self.prices = list(self.business.costs)
+        self.prices = [1.95, 5.7]
         self.profit = self.business.sell_n(self.prices, self.batch_size)[0]
         self.profit_history = [self.profit]
         self.price_history = [self.prices]

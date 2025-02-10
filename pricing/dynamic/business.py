@@ -21,7 +21,7 @@ class Business:
         self.customer = customer
         self.transaction_history = DataFrame(columns=["prices", "chosen_tier"])
 
-    def sell(self, prices: List[float]) -> None:
+    def sell(self, prices: List[float]) -> tuple[float, int]:
         """
         Process the sale for a single customer at provided prices.
 
@@ -38,6 +38,8 @@ class Business:
         tier = self.customer.choose_tier(self.costs, prices)
         if tier > 0:
             self.net_profit += prices[tier - 1] - self.costs[tier - 1]
+        
+        return prices[tier - 1] - self.costs[tier - 1], tier
         """new_transaction = pd.DataFrame([[prices, tier]],
                                        columns=self.transaction_history.columns)
         self.transaction_history = pd.concat([new_transaction,
