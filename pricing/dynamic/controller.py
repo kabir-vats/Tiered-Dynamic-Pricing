@@ -35,10 +35,10 @@ class BatchGradientDescent:
     def __init__(
         self,
         business,
-        batch_size: int = 10,
+        batch_size: int = 100,
         max_iters: int = 1500,
         gradient_delta: float = 1e-1,
-        lr: int = 0,
+        lr: int = 0.01,
         beta1: float = 0.9,
         beta2: float = 0.999,
         epsilon: float = 1e-8,
@@ -85,12 +85,12 @@ class BatchGradientDescent:
         self.estimator.update(self.prices, choices)
 
         # self.profit_history.append(np.mean(profits))
-        print(choices)
+        '''print(choices)
         print(self.prices)
         print(self.estimator.a_mean)
         print(self.estimator.b_mean)
         print(self.estimator.lambda_mean)
-        input('cont')
+        input('cont')'''
 
 
         return self.mock_descent.gradient(self.prices)
@@ -132,7 +132,7 @@ class BatchGradientDescent:
         self.price_history : List[List[float]]
             Record of prices at each iteration.
         """
-        self.prices = [1.95, 5.7]
+        self.prices = [1.2, 4.8]
         self.profit = self.business.sell_n(self.prices, self.batch_size)[0]
         self.profit_history = [self.profit]
         self.price_history = [self.prices]
