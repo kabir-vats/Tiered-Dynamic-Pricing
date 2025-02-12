@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import List
 import numpy as np
 from tqdm import tqdm
@@ -38,7 +39,7 @@ class BatchGradientDescent:
         batch_size: int = 100,
         max_iters: int = 1500,
         gradient_delta: float = 1e-1,
-        lr: int = 0.01,
+        lr: int = 0.002,
         beta1: float = 0.9,
         beta2: float = 0.999,
         epsilon: float = 1e-8,
@@ -85,12 +86,19 @@ class BatchGradientDescent:
         self.estimator.update(self.prices, choices)
 
         # self.profit_history.append(np.mean(profits))
-        '''print(choices)
-        print(self.prices)
-        print(self.estimator.a_mean)
-        print(self.estimator.b_mean)
-        print(self.estimator.lambda_mean)
-        input('cont')'''
+        if self.iters % 100 == 0:
+            print(Counter(choices))
+            print(self.prices)
+            print(self.estimator.a_mean)
+            print(self.estimator.b_mean)
+            print(self.estimator.lambda_mean)
+            mu = (self.estimator.a_mean + self.estimator.b_mean) / 2
+            sigma = (self.estimator.b_mean - self.estimator.a_mean) / 2
+            self.mock_system.update_parameters(mu, sigma, self.estimator.lambda_mean)
+            print(self.mock_system.tier_probabilities(self.prices))
+            self.mock_system.update_parameters(2, 1, 2/3)
+            print(self.mock_system.tier_probabilities(self.prices))
+            input('cont')
 
 
         return self.mock_descent.gradient(self.prices)
@@ -132,7 +140,7 @@ class BatchGradientDescent:
         self.price_history : List[List[float]]
             Record of prices at each iteration.
         """
-        self.prices = [1.2, 4.8]
+        self.prices = self.business.costs
         self.profit = self.business.sell_n(self.prices, self.batch_size)[0]
         self.profit_history = [self.profit]
         self.price_history = [self.prices]
@@ -142,6 +150,7 @@ class BatchGradientDescent:
         t = 0  # Iteration counter
 
         for i in tqdm(range(self.max_iters)):
+            self.iters = i
             grad = np.array(self.estimate_gradient())
             t += 1
 
