@@ -36,10 +36,10 @@ class BatchGradientDescent:
     def __init__(
         self,
         business,
-        batch_size: int = 100,
-        max_iters: int = 1500,
+        batch_size: int = 50,
+        max_iters: int = 150,
         gradient_delta: float = 1e-1,
-        lr: int = 0.002,
+        lr: int = 0.02,
         beta1: float = 0.9,
         beta2: float = 0.999,
         epsilon: float = 1e-8,
@@ -86,18 +86,18 @@ class BatchGradientDescent:
         self.estimator.update(self.prices, choices)
 
         # self.profit_history.append(np.mean(profits))
-        if self.iters % 100 == 0:
+        if self.iters % 10 == 0:
             print(Counter(choices))
             print(self.prices)
             print(self.estimator.a_mean)
             print(self.estimator.b_mean)
             print(self.estimator.lambda_mean)
-            mu = (self.estimator.a_mean + self.estimator.b_mean) / 2
+            '''mu = (self.estimator.a_mean + self.estimator.b_mean) / 2
             sigma = (self.estimator.b_mean - self.estimator.a_mean) / 2
             self.mock_system.update_parameters(mu, sigma, self.estimator.lambda_mean)
             print(self.mock_system.tier_probabilities(self.prices))
             self.mock_system.update_parameters(2, 1, 2/3)
-            print(self.mock_system.tier_probabilities(self.prices))
+            print(self.mock_system.tier_probabilities(self.prices))'''
             input('cont')
 
 

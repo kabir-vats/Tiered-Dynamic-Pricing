@@ -23,7 +23,7 @@ class BayesianEstimator:
         system: TieredPricingSystem,
         a_prior: Tuple[float, float] = (1.9, 5),
         b_prior: Tuple[float, float] = (2, 5),
-        lam_prior: Tuple[float, float] = (0.67, 0.4),
+        lam_prior: Tuple[float, float] = (0.5, 0.4),
         num_samples: int = 1000,
     ):
         self.a_mean, self.a_std = a_prior
@@ -73,7 +73,7 @@ class BayesianEstimator:
         # Ensure valid values
         a_samples = a_samples[a_samples >= 0]
         b_samples = b_samples[b_samples >= 0]
-        lambda_samples = lambda_samples[(lambda_samples >= 0) & (lambda_samples <= 0.9)]
+        lambda_samples = lambda_samples[(lambda_samples >= 0) & (lambda_samples <= 1)]
         a_sam = []
         b_sam = []
         lam_sam = []
@@ -102,6 +102,7 @@ class BayesianEstimator:
         if valid_choices == 0:
             self.a_std *= 1.1
             self.b_std *= 1.1
+            self.system.update_parameters((self.a_mean+self.b_mean)/2, (self.b_mean-self.a_mean)/2, self.lambda_mean)
             return
         '''else:
             self.a_std = max(self.a_std * 0.99, 0.1)
@@ -124,7 +125,7 @@ class BayesianEstimator:
         self.b_mean =  (np.sum(np.float64(self.b_posterior[-100:]) * np.float64(self.likelihood_posterior[-100:])) / np.sum(np.float64(self.likelihood_posterior[-100:])))
         self.lambda_mean = (np.sum(np.float64(self.lambda_posterior[-100:]) * np.float64(self.likelihood_posterior[-100:])) / np.sum(np.float64(self.likelihood_posterior[-100:])))
 
-        self.system.update_parameters((self.a_mean+self.b_mean)/2, (self.a_mean-self.b_mean)/2, self.lambda_mean)
+        self.system.update_parameters((self.a_mean+self.b_mean)/2, (self.b_mean-self.a_mean)/2, self.lambda_mean)
         
         # Reduce uncertainty over time
         '''self.a_std = max(self.a_std * 0.99, 0.1)

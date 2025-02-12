@@ -32,6 +32,12 @@ def main():
     dual.maximize()
     profits, samples = simulate_profits(system, n_samples=100)
 
+    print(controller.mock_system.mu)
+    print(controller.mock_system.sigma)
+    print(controller.mock_system.lam)
+    print(controller.estimator.a_mean)
+    print(controller.estimator.b_mean)
+    print(controller.estimator.lambda_mean)
     print(controller.profit)
     print(descent.profit)
     print(dual.profit)
