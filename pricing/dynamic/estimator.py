@@ -21,8 +21,8 @@ class BayesianEstimator:
     def __init__(
         self,
         system: TieredPricingSystem,
-        a_prior: Tuple[float, float] = (1.9, 5),
-        b_prior: Tuple[float, float] = (2, 5),
+        a_prior: Tuple[float, float] = (0.1, 5),
+        b_prior: Tuple[float, float] = (4, 5),
         lam_prior: Tuple[float, float] = (0.5, 0.4),
         num_samples: int = 1000,
     ):
@@ -36,17 +36,16 @@ class BayesianEstimator:
         self.a_posterior = [self.a_mean]
         self.b_posterior = [self.b_mean]
         self.lambda_posterior = [self.lambda_mean]
-        self.likelihood_posterior = [1]
+        self.likelihood_posterior = [0]  # Initialize with log(1) = 0
 
     def param_probability(self, a: float, b:float, lam:float, trial: Trial) -> float:
         self.system.update_parameters((a+b)/2, (b-a)/2, lam)
         probs = self.system.tier_probabilities(trial.prices)
-        denom = 1
-        num = math.factorial(len(trial.choices))
+        prob = math.factorial(len(trial.choices))
         for i in range(len(probs)):
-            denom *= math.factorial(trial.counts[i])
-            num *= probs[i]**trial.counts[i]
-        return num / denom
+            prob /= math.factorial(trial.counts[i])
+            prob *= probs[i]**trial.counts[i]
+        return prob
         
     def update(self, prices: List[float], choices: List[int]) -> None:
         """
@@ -55,16 +54,15 @@ class BayesianEstimator:
         curr_trial = Trial(prices, choices)
         # Update previous probabilities based on new data
         for i in range(len(self.likelihood_posterior)):
-            if self.likelihood_posterior[i] == 0:
-                continue
-            self.likelihood_posterior[i] *= self.param_probability(self.a_posterior[i], self.b_posterior[i], 
-                                                                   self.lambda_posterior[i], curr_trial)
-        index = np.argmax(self.likelihood_posterior)
-        '''print('\n')
-        print(self.likelihood_posterior[0])
-        print(self.likelihood_posterior[index])
-        print(self.a_posterior[index], self.b_posterior[index], self.lambda_posterior[index])
-'''
+            if np.isfinite(self.likelihood_posterior[i]):
+                param_prob = self.param_probability(self.a_posterior[i], self.b_posterior[i],
+                                                    self.lambda_posterior[i], curr_trial)
+                if param_prob > 0:
+                    self.likelihood_posterior[i] += math.log(param_prob)
+                else:
+                    print('oh no')
+                    self.likelihood_posterior[i] = -np.inf
+
         # Sample parameter values from prior distributions
         a_samples = np.random.uniform(self.a_mean-self.a_std, self.a_mean+self.a_std, self.num_samples)
         b_samples = np.random.uniform(self.b_mean-self.b_std, self.a_mean+self.b_std, self.num_samples)
@@ -85,49 +83,59 @@ class BayesianEstimator:
 
         
         # Compute likelihoods for each sample
-        likelihoods = []
+        log_likelihoods = []
         valid_choices = 0
 
         for a, b, lam in zip(a_sam, b_sam, lam_sam):
-            conditional_prob = self.param_probability(a, b, lam, curr_trial)
+            param_prob = self.param_probability(a, b, lam, curr_trial)
+            if param_prob > 0:
+                log_prob = math.log(param_prob)
+            else:
+                log_prob = -np.inf
             for trial in self.prev_trials:
-                if conditional_prob == 0:
+                if not np.isfinite(log_prob):
                     break
-                conditional_prob *= self.param_probability(a, b, lam, trial)
-            if (conditional_prob > 0):
+                param_prob = self.param_probability(a, b, lam, trial)
+                if param_prob > 0:
+                    log_prob += math.log(param_prob)
+                else:
+                    log_prob = -np.inf
+            if np.isfinite(log_prob):
                 valid_choices += 1
-            likelihoods.append(conditional_prob)
+            log_likelihoods.append(log_prob)
 
-        # print(likelihoods)
         if valid_choices == 0:
+            print('hhaa')
             self.a_std *= 1.1
             self.b_std *= 1.1
             self.system.update_parameters((self.a_mean+self.b_mean)/2, (self.b_mean-self.a_mean)/2, self.lambda_mean)
             return
-        '''else:
-            self.a_std = max(self.a_std * 0.99, 0.1)
-            self.b_std = max(self.b_std * 0.99, 0.1)'''
 
-        likelihoods = np.array(likelihoods)
-        likelihoods = likelihoods.astype(np.float64)
-        
+        log_likelihoods = np.array(log_likelihoods)
+        max_log = np.max(log_likelihoods)
+        log_likelihoods = log_likelihoods - max_log
 
-        # Compute posterior weights
+        likelihoods = np.exp(log_likelihoods)
+        # print(log_likelihoods)
+        # Normalize log likelihoods and convert to probabilities
+
         posterior_weights = likelihoods / np.sum(likelihoods)
+        # posterior_weights = posterior_weights / np.sum(posterior_weights)
+        # print(posterior_weights)
+        
         self.prev_trials.append(curr_trial)
         
-        self.likelihood_posterior.append(np.sum(likelihoods) / valid_choices)
+        self.likelihood_posterior.append(math.log(np.sum(likelihoods) / valid_choices) + max_log)
         self.a_posterior.append(np.sum(posterior_weights * a_sam))
         self.b_posterior.append(np.sum(posterior_weights * b_sam))
         self.lambda_posterior.append(np.sum(posterior_weights * lam_sam))
 
-        self.a_mean = (np.sum(np.float64(self.a_posterior[-100:]) * np.float64(self.likelihood_posterior[-100:])) / np.sum(np.float64(self.likelihood_posterior[-100:])))
-        self.b_mean =  (np.sum(np.float64(self.b_posterior[-100:]) * np.float64(self.likelihood_posterior[-100:])) / np.sum(np.float64(self.likelihood_posterior[-100:])))
-        self.lambda_mean = (np.sum(np.float64(self.lambda_posterior[-100:]) * np.float64(self.likelihood_posterior[-100:])) / np.sum(np.float64(self.likelihood_posterior[-100:])))
+        # Convert log likelihoods to weights for mean calculation
+        recent_weights = np.exp(self.likelihood_posterior - np.max(self.likelihood_posterior))
+        recent_weights = recent_weights / np.sum(recent_weights)
+        
+        self.a_mean = np.sum(np.array(self.a_posterior) * recent_weights)
+        self.b_mean = np.sum(np.array(self.b_posterior) * recent_weights)
+        self.lambda_mean = np.sum(np.array(self.lambda_posterior) * recent_weights)
 
         self.system.update_parameters((self.a_mean+self.b_mean)/2, (self.b_mean-self.a_mean)/2, self.lambda_mean)
-        
-        # Reduce uncertainty over time
-        '''self.a_std = max(self.a_std * 0.99, 0.1)
-        self.b_std = max(self.b_std * 0.99, 0.1)
-        self.lambda_std = max(self.lambda_std * 0.99, 0.05)'''

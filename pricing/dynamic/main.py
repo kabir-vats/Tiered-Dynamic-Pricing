@@ -14,7 +14,7 @@ def main():
     np.set_printoptions(legacy="1.25")
     # test_lr()
     C = [1, 4]
-    lambda_value = 2 / 3
+    lambda_value = 5 / 6
     mu = 2
     sigma = 1
     customer = Customer(mu, sigma, lambda_value)

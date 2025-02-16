@@ -36,10 +36,10 @@ class BatchGradientDescent:
     def __init__(
         self,
         business,
-        batch_size: int = 50,
-        max_iters: int = 150,
+        batch_size: int = 1,
+        max_iters: int = 200,
         gradient_delta: float = 1e-1,
-        lr: int = 0.02,
+        lr: int = 0.03,
         beta1: float = 0.9,
         beta2: float = 0.999,
         epsilon: float = 1e-8,
@@ -92,6 +92,8 @@ class BatchGradientDescent:
             print(self.estimator.a_mean)
             print(self.estimator.b_mean)
             print(self.estimator.lambda_mean)
+            # print(self.estimator.likelihood_posterior)
+            # print(self.estimator.a_posterior)
             '''mu = (self.estimator.a_mean + self.estimator.b_mean) / 2
             sigma = (self.estimator.b_mean - self.estimator.a_mean) / 2
             self.mock_system.update_parameters(mu, sigma, self.estimator.lambda_mean)
