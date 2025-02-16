@@ -18,15 +18,17 @@ class Customer:
         Type of distribution ('uniform' or 'normal').
     """
 
-    def __init__(self, mu: float, sigma: float, lam: float,
-                 pdf_type: str = 'uniform') -> None:
+    def __init__(
+        self, mu: float, sigma: float, lam: float, pdf_type: str = "uniform"
+    ) -> None:
         self.__mu = mu
         self.__sigma = sigma
         self.__lam = lam
         self.pdf_type = pdf_type
 
-    def utility(self, cost: float, base_cost: float, price: float,
-                valuation_param: float) -> float:
+    def utility(
+        self, cost: float, base_cost: float, price: float, valuation_param: float
+    ) -> float:
         """
         Calculate the utility of a customer given a cost and a price.
 
@@ -47,7 +49,7 @@ class Customer:
             The utility of the customer.
         """
 
-        return valuation_param * (cost / base_cost)**self.__lam - price
+        return valuation_param * (cost / base_cost) ** self.__lam - price
 
     def choose_tier(self, costs: List[float], prices: List[float]) -> int:
         """
@@ -66,14 +68,17 @@ class Customer:
             The tier that the customer belongs to.
         """
 
-        if self.pdf_type == 'uniform':
-            valuation_param = np.random.uniform(self.__mu - self.__sigma,
-                                                self.__mu + self.__sigma)
+        if self.pdf_type == "uniform":
+            valuation_param = np.random.uniform(
+                self.__mu - self.__sigma, self.__mu + self.__sigma
+            )
         else:
             valuation_param = np.random.normal(self.__mu, self.__sigma)
 
         base_cost = min(costs)
 
-        utilities = [0] + [self.utility(cost, base_cost, price, valuation_param)
-                           for cost, price in zip(costs, prices)]
+        utilities = [0] + [
+            self.utility(cost, base_cost, price, valuation_param)
+            for cost, price in zip(costs, prices)
+        ]
         return np.argmax(utilities)

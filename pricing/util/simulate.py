@@ -6,8 +6,9 @@ from tqdm import tqdm
 from pricing.static.optimize import DualAnnealing
 
 
-def simulate_profits(system: TieredPricingSystem,
-                     bounds: List = None, n_samples: int = 50):
+def simulate_profits(
+    system: TieredPricingSystem, bounds: List = None, n_samples: int = 50
+):
     """
     Calculate profits for prices at sample points across an interval
 
@@ -31,8 +32,10 @@ def simulate_profits(system: TieredPricingSystem,
         List of the price each tier was evaluated at
     """
     if bounds is None:
-        bounds = [(cost * (system.mu + system.sigma),
-                   cost * (system.mu - system.sigma)) for cost in system.costs]
+        bounds = [
+            (cost * (system.mu + system.sigma), cost * (system.mu - system.sigma))
+            for cost in system.costs
+        ]
     elif len(bounds) != len(system.costs):
         raise Exception("Illegal bounds for system")
 
@@ -47,8 +50,9 @@ def simulate_profits(system: TieredPricingSystem,
     return profits, samples
 
 
-def simulate_optimal_profits(system, bounds: List, n_samples: int,
-                             optimizer=DualAnnealing):
+def simulate_optimal_profits(
+    system, bounds: List, n_samples: int, optimizer=DualAnnealing
+):
     """
     Calculate optimal profits and prices for costs at sample points across an interval
 

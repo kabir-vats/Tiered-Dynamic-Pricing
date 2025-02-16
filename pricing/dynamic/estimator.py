@@ -16,6 +16,7 @@ class Trial:
     choices : List[int]
         The choices made by customers in this trial
     """
+
     def __init__(self, prices: List[float], choices: List[int]):
         self.prices = prices
         self.choices = choices
@@ -40,6 +41,7 @@ class BayesianEstimator:
     num_samples : int
         Number of samples to use in parameter estimation
     """
+
     def __init__(
         self,
         system: TieredPricingSystem,

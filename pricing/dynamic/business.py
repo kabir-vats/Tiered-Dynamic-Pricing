@@ -5,15 +5,16 @@ from pricing.dynamic.customer import Customer
 
 class Business:
     """
-        A business with given costs and a customer.
+    A business with given costs and a customer.
 
-        Parameters
-        ----------
-        costs : List[float]
-            Cost thresholds for the tiers.
-        customer : Customer
-            Customer object with distribution parameters.
+    Parameters
+    ----------
+    costs : List[float]
+        Cost thresholds for the tiers.
+    customer : Customer
+        Customer object with distribution parameters.
     """
+
     def __init__(self, costs: List[float], customer: Customer) -> None:
         self.costs = costs
         self.net_profit = 0
@@ -38,7 +39,7 @@ class Business:
         tier = self.customer.choose_tier(self.costs, prices)
         if tier > 0:
             self.net_profit += prices[tier - 1] - self.costs[tier - 1]
-        
+
         return prices[tier - 1] - self.costs[tier - 1], tier
         """new_transaction = pd.DataFrame([[prices, tier]],
                                        columns=self.transaction_history.columns)

@@ -302,7 +302,7 @@ class GradientDescentAdam:
         intervals.append((thresholds[-1], sys.float_info.max))
 
         grad = [0.0] * len(prices)
-        #print(t_grads)
+        # print(t_grads)
 
         start, end = (
             self.system.mu - self.system.sigma,
@@ -323,15 +323,15 @@ class GradientDescentAdam:
                 prb_grads.append(
                     prb_grad * point_prob if (intervals[j][0] < intervals[j][1]) else 0
                 )
-            #print(prb_grads)
+            # print(prb_grads)
             grad[i] = sum((prices - costs) * (np.array(prb_grads[1:]))) + max(
                 (min(intervals[i + 1][1], end) - max(intervals[i + 1][0], start))
                 * point_prob,
                 0,
             )
-            #print(sum((prices - costs) * (np.array(prb_grads[1:]))))
+            # print(sum((prices - costs) * (np.array(prb_grads[1:]))))
         # print(t_grads)
-        #print(grad)
+        # print(grad)
 
         grad_ordered = [None] * len(prices)
         for i, idx in enumerate(sorted_indices):

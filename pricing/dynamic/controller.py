@@ -59,12 +59,7 @@ class BatchGradientDescent:
             self.learning_rate = min(business.costs) / 5
 
         self.mock_system = TieredPricingSystem(
-            self.business.costs,
-            len(self.business.costs),
-            1,
-            1,
-            1,
-            'uniform'
+            self.business.costs, len(self.business.costs), 1, 1, 1, "uniform"
         )  # dummy values for mu, sigma, lambda
 
         self.estimator = BayesianEstimator(self.mock_system)
@@ -82,7 +77,7 @@ class BatchGradientDescent:
             profit, choice = self.business.sell(self.prices)
             profits.append(profit)
             choices.append(choice)
-        
+
         self.estimator.update(self.prices, choices)
 
         # self.profit_history.append(np.mean(profits))
@@ -94,36 +89,35 @@ class BatchGradientDescent:
             print(self.estimator.lambda_mean)
             # print(self.estimator.likelihood_posterior)
             # print(self.estimator.a_posterior)
-            '''mu = (self.estimator.a_mean + self.estimator.b_mean) / 2
+            """mu = (self.estimator.a_mean + self.estimator.b_mean) / 2
             sigma = (self.estimator.b_mean - self.estimator.a_mean) / 2
             self.mock_system.update_parameters(mu, sigma, self.estimator.lambda_mean)
             print(self.mock_system.tier_probabilities(self.prices))
             self.mock_system.update_parameters(2, 1, 2/3)
-            print(self.mock_system.tier_probabilities(self.prices))'''
-            input('cont')
-
+            print(self.mock_system.tier_probabilities(self.prices))"""
+            input("cont")
 
         return self.mock_descent.gradient(self.prices)
 
         # Combine with empirical gradient for robustness
-        '''empirical_grad = self._empirical_gradient(profits, choices)
+        """empirical_grad = self._empirical_gradient(profits, choices)
         combined_grad = [
             0.7 * ag + 0.3 * eg
             for ag, eg in zip(analytical_grad, empirical_grad)
         ]
 
-        return combined_grad'''
+        return combined_grad"""
 
-    def _empirical_gradient(self, profits: List[float], 
-                          choices: List[int]) -> List[float]:
+    def _empirical_gradient(
+        self, profits: List[float], choices: List[int]
+    ) -> List[float]:
         """Compute empirical gradient from batch samples."""
         grad = [0.0] * len(self.prices)
         for i in range(len(self.prices)):
             vec = [0.0] * len(self.prices)
             vec[i] = 1.0
             grad[i] = (
-                np.mean(profits) - 
-                self.business.sell_n(self.prices, self.batch_size)[0]
+                np.mean(profits) - self.business.sell_n(self.prices, self.batch_size)[0]
             ) / self.gradient_delta
         return grad
 
