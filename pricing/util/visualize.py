@@ -19,7 +19,7 @@ def surface_plot(
 ) -> plt.Figure:
     """
     Create a 3D surface plot from the given input data.
-
+    
     Parameters
     ----------
     X : list or numpy.ndarray

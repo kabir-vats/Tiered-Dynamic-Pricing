@@ -27,18 +27,47 @@ class TieredPricingSystem:
         Default is 'uniform'.
     """
 
-    def __init__(self, costs: List[float], tiers: int, lam: float,
-                 mu: float, sigma: float, pdf_type: str = 'uniform') -> None:
+    def __init__(
+        self,
+        costs: List[float],
+        tiers: int,
+        lam: float,
+        mu: float,
+        sigma: float,
+        pdf_type: str = "uniform",
+    ) -> None:
         self.costs = costs
-        self.utils = [min(costs) * (cost / min(costs))**lam for cost in costs]
+        self.utils = [min(costs) * (cost / min(costs)) ** lam for cost in costs]
         self.tiers = tiers
         self.lam = lam
         self.mu = mu
         self.sigma = sigma
         self.pdf_type = pdf_type
 
-    def calculate_intervals(self, prices_unsorted:
-                            List[float]) -> List[Tuple[float, float]]:
+    def update_parameters(self, mu: float, sigma: float, lam: float) -> None:
+        """
+        Update the parameters of the system.
+
+        Parameters
+        ----------
+        mu : float
+            Mean of the distribution (center of uniform or mean of Gaussian).
+        sigma : float
+            Spread of the distribution (half-width for uniform,
+            standard deviation for Gaussian).
+        lam : float
+            Scaling parameter that influences pricing behavior.
+        """
+        self.mu = mu
+        self.sigma = sigma
+        self.lam = lam
+        self.utils = [
+            min(self.costs) * (cost / min(self.costs)) ** lam for cost in self.costs
+        ]
+
+    def calculate_intervals(
+        self, prices_unsorted: List[float]
+    ) -> List[Tuple[float, float]]:
         """
         Calculate intervals of the valuation parameter for which each tier is optimal.
 
@@ -63,9 +92,7 @@ class TieredPricingSystem:
             if i == 0:
                 thresholds.append(prices[0] / utils[0])
             else:
-                intersection = (prices[i] - prices[i - 1]) / (
-                    utils[i] - utils[i-1]
-                )
+                intersection = (prices[i] - prices[i - 1]) / (utils[i] - utils[i - 1])
                 j = 0
                 while intersection < thresholds[i - j]:
                     j += 1
@@ -74,7 +101,7 @@ class TieredPricingSystem:
                         break
                     else:
                         intersection = (prices[i] - prices[i - j - 1]) / (
-                            utils[i] - utils[i-j-1]
+                            utils[i] - utils[i - j - 1]
                         )
                 thresholds.append(intersection)
 
@@ -109,17 +136,19 @@ class TieredPricingSystem:
         probabilities = []
         intervals = self.calculate_intervals(prices)
 
-        if self.pdf_type == 'uniform':
+        if self.pdf_type == "uniform":
             start, end = self.mu - self.sigma, self.mu + self.sigma
             point_prob = 1 / (end - start)
             for interval in intervals:
-                prob = max((min(interval[1], end) - max(interval[0], start))
-                           * point_prob, 0)
+                prob = max(
+                    (min(interval[1], end) - max(interval[0], start)) * point_prob, 0
+                )
                 probabilities.append(prob)
-        elif self.pdf_type == 'gaussian':
+        elif self.pdf_type == "gaussian":
             for interval in intervals:
                 prob = norm.cdf(interval[1], self.mu, self.sigma) - norm.cdf(
-                    interval[0], self.mu, self.sigma)
+                    interval[0], self.mu, self.sigma
+                )
                 probabilities.append(prob)
         else:
             raise ValueError("pdf_type must be 'uniform' or 'gaussian'.")
@@ -141,6 +170,7 @@ class TieredPricingSystem:
             Total profit calculated from the given prices.
         """
         probabilities = self.tier_probabilities(prices)
-        profits = [(pr * (p - c)) for p, c, pr in zip(prices, self.costs,
-                                                      probabilities[1:])]
+        profits = [
+            (pr * (p - c)) for p, c, pr in zip(prices, self.costs, probabilities[1:])
+        ]
         return sum(profits)

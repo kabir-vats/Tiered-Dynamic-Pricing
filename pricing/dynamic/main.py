@@ -14,7 +14,7 @@ def main():
     np.set_printoptions(legacy="1.25")
     # test_lr()
     C = [1, 4]
-    lambda_value = 2 / 3
+    lambda_value = 5 / 6
     mu = 2
     sigma = 1
     customer = Customer(mu, sigma, lambda_value)
@@ -25,13 +25,19 @@ def main():
     descent = GradientDescentAdam(system)
 
     dual = DualAnnealing(system)
-    profits, samples = simulate_profits(system, n_samples=100)
 
     controller.maximize()
 
     descent.maximize()
     dual.maximize()
+    profits, samples = simulate_profits(system, n_samples=100)
 
+    print(controller.mock_system.mu)
+    print(controller.mock_system.sigma)
+    print(controller.mock_system.lam)
+    print(controller.estimator.a_mean)
+    print(controller.estimator.b_mean)
+    print(controller.estimator.lambda_mean)
     print(controller.profit)
     print(descent.profit)
     print(dual.profit)

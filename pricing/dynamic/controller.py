@@ -1,7 +1,10 @@
+from collections import Counter
 from typing import List
 import numpy as np
 from tqdm import tqdm
+from pricing.static.optimize import GradientDescentAdam
 from pricing.static.system import TieredPricingSystem
+from pricing.dynamic.estimator import BayesianEstimator
 
 
 class BatchGradientDescent:
@@ -33,23 +36,16 @@ class BatchGradientDescent:
     def __init__(
         self,
         business,
-        batch_size: int = 1000,
-        max_iters: int = 1500,
+        batch_size: int = 1,
+        max_iters: int = 200,
         gradient_delta: float = 1e-1,
-        lr: int = None,
+        lr: int = 0.03,
         beta1: float = 0.9,
         beta2: float = 0.999,
         epsilon: float = 1e-8,
         smoothing_alpha: float = 0,
     ) -> None:
         self.business = business
-        self.system = TieredPricingSystem(
-            business.costs,
-            len(business.costs),
-            business.customer.lam,
-            business.customer.mu,
-            business.customer.sigma,
-        )
         self.max_iters = max_iters
         self.gradient_delta = gradient_delta
         self.batch_size = batch_size
@@ -62,41 +58,74 @@ class BatchGradientDescent:
         if lr is None:
             self.learning_rate = min(business.costs) / 5
 
+        self.mock_system = TieredPricingSystem(
+            self.business.costs,
+            len(self.business.costs),
+            1,
+            1,
+            1,
+            'uniform'
+        )  # dummy values for mu, sigma, lambda
+
+        self.estimator = BayesianEstimator(self.mock_system)
+        self.mock_descent = GradientDescentAdam(self.mock_system)
+
     def estimate_gradient(self) -> List[float]:
         """
-        Estimate the gradient of the profit function using batch samples.
-
-        Returns
-        -------
-        List[float]
-            The (possibly smoothed) gradient vector for each price tier.
-
-        Updates
-        -------
-        self.smoothed_grad : List[float]
-            Stores the updated smoothed gradient vector.
+        Estimate gradient using both batch samples and analytical computation
+        with estimated parameters.
         """
-        # Use partial or stale data
+        # Get batch of customer choices
+        profits = []
+        choices = []
+        for _ in range(self.batch_size):
+            profit, choice = self.business.sell(self.prices)
+            profits.append(profit)
+            choices.append(choice)
+        
+        self.estimator.update(self.prices, choices)
+
+        # self.profit_history.append(np.mean(profits))
+        if self.iters % 10 == 0:
+            print(Counter(choices))
+            print(self.prices)
+            print(self.estimator.a_mean)
+            print(self.estimator.b_mean)
+            print(self.estimator.lambda_mean)
+            # print(self.estimator.likelihood_posterior)
+            # print(self.estimator.a_posterior)
+            '''mu = (self.estimator.a_mean + self.estimator.b_mean) / 2
+            sigma = (self.estimator.b_mean - self.estimator.a_mean) / 2
+            self.mock_system.update_parameters(mu, sigma, self.estimator.lambda_mean)
+            print(self.mock_system.tier_probabilities(self.prices))
+            self.mock_system.update_parameters(2, 1, 2/3)
+            print(self.mock_system.tier_probabilities(self.prices))'''
+            input('cont')
+
+
+        return self.mock_descent.gradient(self.prices)
+
+        # Combine with empirical gradient for robustness
+        '''empirical_grad = self._empirical_gradient(profits, choices)
+        combined_grad = [
+            0.7 * ag + 0.3 * eg
+            for ag, eg in zip(analytical_grad, empirical_grad)
+        ]
+
+        return combined_grad'''
+
+    def _empirical_gradient(self, profits: List[float], 
+                          choices: List[int]) -> List[float]:
+        """Compute empirical gradient from batch samples."""
         grad = [0.0] * len(self.prices)
         for i in range(len(self.prices)):
             vec = [0.0] * len(self.prices)
             vec[i] = 1.0
-            # Sample fewer data points
             grad[i] = (
-                self.business.sell_n(
-                    self.prices + self.gradient_delta * np.asarray(vec), self.batch_size
-                )[0]
-                - self.business.sell_n(self.prices, self.batch_size)[0]
+                np.mean(profits) - 
+                self.business.sell_n(self.prices, self.batch_size)[0]
             ) / self.gradient_delta
-        if self.smoothed_grad is None:
-            self.smoothed_grad = [g * (1 - self.smoothing_alpha) for g in grad]
-        else:
-            for i in range(len(grad)):
-                self.smoothed_grad[i] = (
-                    self.smoothing_alpha * self.smoothed_grad[i]
-                    + (1 - self.smoothing_alpha) * grad[i]
-                )
-        return self.smoothed_grad
+        return grad
 
     def maximize(self) -> None:
         """
@@ -113,7 +142,7 @@ class BatchGradientDescent:
         self.price_history : List[List[float]]
             Record of prices at each iteration.
         """
-        self.prices = list(self.business.costs)
+        self.prices = self.business.costs
         self.profit = self.business.sell_n(self.prices, self.batch_size)[0]
         self.profit_history = [self.profit]
         self.price_history = [self.prices]
@@ -123,6 +152,7 @@ class BatchGradientDescent:
         t = 0  # Iteration counter
 
         for i in tqdm(range(self.max_iters)):
+            self.iters = i
             grad = np.array(self.estimate_gradient())
             t += 1
 
@@ -139,7 +169,7 @@ class BatchGradientDescent:
             )
 
             self.prices = prices_next.tolist()
-            self.profit = self.system.profit(self.prices)
+            self.profit = self.mock_system.profit(self.prices)
             self.profit_history.append(self.profit)
             self.price_history.append(self.prices.copy())
         print(self.business.transaction_history)
