@@ -89,6 +89,7 @@ class BatchGradientDescent:
             print(self.estimator.lambda_mean)
             # print(self.estimator.likelihood_posterior)
             # print(self.estimator.a_posterior)
+            # print(self.estimator.b_posterior)
             """mu = (self.estimator.a_mean + self.estimator.b_mean) / 2
             sigma = (self.estimator.b_mean - self.estimator.a_mean) / 2
             self.mock_system.update_parameters(mu, sigma, self.estimator.lambda_mean)
@@ -166,4 +167,3 @@ class BatchGradientDescent:
             self.profit = self.mock_system.profit(self.prices)
             self.profit_history.append(self.profit)
             self.price_history.append(self.prices.copy())
-        print(self.business.transaction_history)

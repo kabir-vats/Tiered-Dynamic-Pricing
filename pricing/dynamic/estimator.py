@@ -45,8 +45,8 @@ class BayesianEstimator:
     def __init__(
         self,
         system: TieredPricingSystem,
-        a_prior: Tuple[float, float] = (0.1, 5),
-        b_prior: Tuple[float, float] = (4, 5),
+        a_prior: Tuple[float, float] = (0.1, 10),
+        b_prior: Tuple[float, float] = (10, 10),
         lam_prior: Tuple[float, float] = (0.5, 0.4),
         num_samples: int = 1000,
     ):
@@ -57,10 +57,10 @@ class BayesianEstimator:
         self.system = system
         self.prev_trials = []
 
-        self.a_posterior = [self.a_mean]
-        self.b_posterior = [self.b_mean]
-        self.lambda_posterior = [self.lambda_mean]
-        self.likelihood_posterior = [0]  # Initialize with log(1) = 0
+        self.a_posterior = []
+        self.b_posterior = []
+        self.lambda_posterior = []
+        self.likelihood_posterior = []  # Initialize with log(1) = 0
 
     def param_probability(self, a: float, b: float, lam: float, trial: Trial) -> float:
         """
@@ -151,8 +151,6 @@ class BayesianEstimator:
         )
 
         # Ensure valid values
-        a_samples = a_samples[a_samples >= 0]
-        b_samples = b_samples[b_samples >= 0]
         lambda_samples = lambda_samples[(lambda_samples >= 0) & (lambda_samples <= 1)]
         a_sam = []
         b_sam = []

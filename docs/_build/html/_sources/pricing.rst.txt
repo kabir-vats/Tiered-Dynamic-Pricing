@@ -4,18 +4,18 @@ pricing package
 Submodules
 ----------
 
-pricing.optimize module
+pricing.static module
 -----------------------
 
-.. automodule:: pricing.optimize
+.. automodule:: pricing.static
    :members:
    :undoc-members:
    :show-inheritance:
 
-pricing.system module
+pricing.dynamic module
 ---------------------
 
-.. automodule:: pricing.system
+.. automodule:: pricing.dynamic
    :members:
    :undoc-members:
    :show-inheritance:
