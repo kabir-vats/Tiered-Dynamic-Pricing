@@ -13,13 +13,13 @@ from pricing.util.visualize import plot_descent_two_tiers
 def main():
     np.set_printoptions(legacy="1.25")
     # test_lr()
-    C = [1,4]
-    lambda_value = 5 / 6
-    mu = 2
-    sigma = 1
+    C = [2, 6]
+    lambda_value = 5/6
+    mu = 3
+    sigma = 3
     customer = Customer(mu, sigma, lambda_value)
     business = Business(C, customer)
-    controller = BatchGradientDescent(business, batch_size=5)
+    controller = BatchGradientDescent(business, batch_size=20)
 
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma)
     descent = GradientDescentAdam(system)
@@ -52,6 +52,12 @@ def main():
     #print(controller.estimator.weights)
     print(max(controller.estimator.weights))
     print(controller.estimator.particles[np.argmax(controller.estimator.weights)])
+    print(controller.estimator.a_mean, controller.estimator.b_mean, controller.estimator.lambda_mean)
+    print(controller.estimator.weights[0])
+    print(controller.estimator.particles[0])
+
+    print(controller.estimator.weights[1])
+    print(controller.estimator.particles[1])
 
     plot_descent_two_tiers(
         samples[0],

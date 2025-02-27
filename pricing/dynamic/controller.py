@@ -37,7 +37,7 @@ class BatchGradientDescent:
         self,
         business,
         batch_size: int = 1,
-        max_iters: int = 200,
+        max_iters: int = 100,
         gradient_delta: float = 1e-1,
         lr: int = 0.03,
         beta1: float = 0.9,
