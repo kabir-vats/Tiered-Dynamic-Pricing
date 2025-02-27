@@ -13,13 +13,13 @@ from pricing.util.visualize import plot_descent_two_tiers
 def main():
     np.set_printoptions(legacy="1.25")
     # test_lr()
-    C = [2,4,6,10]
+    C = [1,4]
     lambda_value = 5 / 6
-    mu = 3
-    sigma = 3
+    mu = 2
+    sigma = 1
     customer = Customer(mu, sigma, lambda_value)
     business = Business(C, customer)
-    controller = BatchGradientDescent(business, batch_size=15)
+    controller = BatchGradientDescent(business, batch_size=5)
 
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma)
     descent = GradientDescentAdam(system)
@@ -30,7 +30,7 @@ def main():
 
     descent.maximize()
     dual.maximize()
-    # profits, samples = simulate_profits(system, n_samples=100)
+    profits, samples = simulate_profits(system, n_samples=100)
 
     print(f'Profit controller believes it achieved: {controller.profit}')
     print(f'Profit controller actually achieved {system.profit(controller.prices)}')
@@ -45,7 +45,15 @@ def main():
 
     print(f'Actual proportion of customers choosing each tier {system.tier_probabilities(controller.prices)}')
 
-    '''plot_descent_two_tiers(
+    print(f'Proportion controller thought were choosing each tier {controller.mock_system.tier_probabilities(controller.prices)}')
+
+
+    #print(controller.estimator.particles)
+    #print(controller.estimator.weights)
+    print(max(controller.estimator.weights))
+    print(controller.estimator.particles[np.argmax(controller.estimator.weights)])
+
+    plot_descent_two_tiers(
         samples[0],
         samples[1],
         profits,
@@ -53,7 +61,7 @@ def main():
         f"Costs: {list(system.costs)} Lambda: {lambda_value} Prof: {controller.profit}",
     )
     # profit: {descent.profit}")
-    plt.show()'''
+    plt.show()
 
 
 if __name__ == "__main__":

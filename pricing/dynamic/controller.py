@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from pricing.static.optimize import GradientDescentAdam
 from pricing.static.system import TieredPricingSystem
-from pricing.dynamic.estimator import BayesianEstimator
+from pricing.dynamic.estimator import BayesianEstimator, ParticleBayesianEstimator
 
 
 class BatchGradientDescent:
@@ -62,7 +62,7 @@ class BatchGradientDescent:
             self.business.costs, len(self.business.costs), 1, 1, 1, "uniform"
         )  # dummy values for mu, sigma, lambda
 
-        self.estimator = BayesianEstimator(self.mock_system)
+        self.estimator = ParticleBayesianEstimator(self.mock_system)
         self.mock_descent = GradientDescentAdam(self.mock_system)
 
     def estimate_gradient(self) -> List[float]:
@@ -81,7 +81,7 @@ class BatchGradientDescent:
         self.estimator.update(self.prices, choices)
 
         # self.profit_history.append(np.mean(profits))
-        if self.iters % 10 == 0:
+        '''if self.iters % 10 == 0:
             print(Counter(choices))
             print(self.prices)
             print(self.estimator.a_mean)
@@ -96,7 +96,7 @@ class BatchGradientDescent:
             print(self.mock_system.tier_probabilities(self.prices))
             self.mock_system.update_parameters(2, 1, 2/3)
             print(self.mock_system.tier_probabilities(self.prices))"""
-            input("cont")
+            input("cont")'''
 
         return self.mock_descent.gradient(self.prices)
 
