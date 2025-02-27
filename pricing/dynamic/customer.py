@@ -49,7 +49,7 @@ class Customer:
             The utility of the customer.
         """
 
-        return valuation_param * (cost / base_cost) ** self.__lam - price
+        return valuation_param * base_cost * (cost / base_cost) ** self.__lam - price
 
     def choose_tier(self, costs: List[float], prices: List[float]) -> int:
         """
