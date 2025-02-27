@@ -251,7 +251,7 @@ class ParticleBayesianEstimator:
         a_prior: Tuple[float, float] = (-5, 5),
         b_prior: Tuple[float, float] = (0, 10),
         lam_prior: Tuple[float, float] = (0, 1),
-        num_samples: int = 100,
+        num_samples: int = 10000,
     ):
         self.particles = np.zeros((num_samples, 3))
         self.particles[:, 0] = np.random.uniform(
@@ -263,9 +263,6 @@ class ParticleBayesianEstimator:
         self.particles[:, 2] = np.random.uniform(
             lam_prior[0], lam_prior[1], num_samples
         )
-
-        self.particles[0] = [0, 6, 5/6]
-        self.particles[1] = [-3, 5, 3/4]
 
         valid = self.particles[:, 1] > self.particles[:, 0]
         self.particles = self.particles[valid]
@@ -342,18 +339,6 @@ class ParticleBayesianEstimator:
         new_weights = np.zeros(self.num_samples)
         for i, (a, b, lam) in enumerate(self.particles):
             prob = self.param_probability(a, b, lam, curr_trial)
-            if (i == 0):
-                print(f' real prob{prob}')
-                self.system.update_parameters((a + b) / 2, (b - a) / 2, lam)
-                print(self.system.tier_probabilities(curr_trial.prices))
-                vals = np.array([curr_trial.counts[i] for i in range(len(prices) + 1)])
-                print(vals / np.sum(vals))  
-            if (i == 1):
-                print(f' fake prog{prob}')
-                self.system.update_parameters((a + b) / 2, (b - a) / 2, lam)
-                print(self.system.tier_probabilities(curr_trial.prices))
-                vals = np.array([curr_trial.counts[i] for i in range(len(prices) + 1)])
-                print(vals / np.sum(vals))
             if prob > 0:
                 new_weights[i] = self.weights[i] * (prob ** 0.5)
             else:
