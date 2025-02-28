@@ -13,8 +13,8 @@ from pricing.util.visualize import plot_descent_two_tiers
 def main():
     np.set_printoptions(legacy="1.25")
     # test_lr()
-    C = [1, 3, 5]
-    lambda_value = 5/6
+    C = [2, 4, 5, 9]
+    lambda_value = 2/3
     mu = 3
     sigma = 3
     customer = Customer(mu, sigma, lambda_value)

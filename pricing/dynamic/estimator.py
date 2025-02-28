@@ -48,7 +48,7 @@ class BayesianEstimator:
         a_prior: Tuple[float, float] = (0.1, 10),
         b_prior: Tuple[float, float] = (10, 10),
         lam_prior: Tuple[float, float] = (0.5, 0.4),
-        num_samples: int = 1000,
+        num_samples: int = 5000,
     ):
         self.a_mean, self.a_std = a_prior
         self.b_mean, self.b_std = b_prior
@@ -251,7 +251,7 @@ class ParticleBayesianEstimator:
         a_prior: Tuple[float, float] = (-5, 5),
         b_prior: Tuple[float, float] = (0, 10),
         lam_prior: Tuple[float, float] = (0, 1),
-        num_samples: int = 10000,
+        num_samples: int = 1000,
     ):
         self.particles = np.zeros((num_samples, 3))
         self.particles[:, 0] = np.random.uniform(
