@@ -3,6 +3,7 @@ import sys
 from typing import List, Optional
 from pricing.static.system import TieredPricingSystem
 from scipy.optimize import dual_annealing, OptimizeResult
+from scipy.stats import norm
 
 
 class GradientDescent:
@@ -218,7 +219,7 @@ class GradientDescentAdam:
         beta1: float = 0.9,
         beta2: float = 0.999,
         epsilon: float = 1e-8,
-        gradient_method: str = "numerical",
+        gradient_method: str = "analytic",
     ) -> None:
         self.system = system
         self.tolerance = tolerance
@@ -302,7 +303,12 @@ class GradientDescentAdam:
         intervals.append((thresholds[-1], sys.float_info.max))
 
         grad = [0.0] * len(prices)
-        # print(t_grads)
+
+        probs = [
+            norm.cdf(interval[1], loc=self.system.mu, scale=self.system.sigma) -
+            norm.cdf(interval[0], loc=self.system.mu, scale=self.system.sigma)
+            for interval in intervals
+        ]
 
         start, end = (
             self.system.mu - self.system.sigma,
@@ -314,24 +320,16 @@ class GradientDescentAdam:
             for j in range(0, len(prices) + 1):
                 d_end = t_grads[j + 1][i + 1] if i + 1 in t_grads[j + 1] else 0
                 d_start = t_grads[j][i + 1] if i + 1 in t_grads[j] else 0
-                # print(d_start)
-                # print(d_end)
-                # print(intervals)
                 prb_grad = (d_end if intervals[j][1] <= end else 0) - (
                     d_start if intervals[j][0] >= start else 0
                 )
-                prb_grads.append(
-                    prb_grad * point_prob if (intervals[j][0] < intervals[j][1]) else 0
-                )
-            # print(prb_grads)
+                weight = probs[j] if self.system.pdf_type == "gaussian" else point_prob
+                prb_grads.append(prb_grad * weight if (intervals[j][0] < intervals[j][1]) else 0)
             grad[i] = sum((prices - costs) * (np.array(prb_grads[1:]))) + max(
                 (min(intervals[i + 1][1], end) - max(intervals[i + 1][0], start))
                 * point_prob,
                 0,
             )
-            # print(sum((prices - costs) * (np.array(prb_grads[1:]))))
-        # print(t_grads)
-        # print(grad)
 
         grad_ordered = [None] * len(prices)
         for i, idx in enumerate(sorted_indices):
