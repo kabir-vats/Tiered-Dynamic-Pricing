@@ -1,9 +1,9 @@
 from typing import List
 import numpy as np
 from tqdm import tqdm
-from pricing.static.optimize import GradientDescentAdam
+from pricing.static.optimize import GradientDescent
 from pricing.static.system import TieredPricingSystem
-from pricing.dynamic.estimator import BayesianEstimator, ParticleBayesianEstimator
+from pricing.dynamic.estimator import BayesianEstimator
 
 
 class BatchGradientDescent:
@@ -61,8 +61,8 @@ class BatchGradientDescent:
             self.business.costs, len(self.business.costs), 1, 1, 1, "uniform"
         )  # dummy values for mu, sigma, lambda
 
-        self.estimator = ParticleBayesianEstimator(self.mock_system)
-        self.mock_descent = GradientDescentAdam(self.mock_system)
+        self.estimator = BayesianEstimator(self.mock_system)
+        self.mock_descent = GradientDescent(self.mock_system)
 
     def estimate_gradient(self) -> List[float]:
         """

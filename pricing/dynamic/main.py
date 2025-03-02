@@ -4,7 +4,7 @@ import numpy as np
 from pricing.dynamic.business import Business
 from pricing.dynamic.controller import BatchGradientDescent
 from pricing.dynamic.customer import Customer
-from pricing.static.optimize import DualAnnealing, GradientDescentAdam
+from pricing.static.optimize import DualAnnealing, GradientDescent
 from pricing.static.system import TieredPricingSystem
 from pricing.util.simulate import simulate_profits
 from pricing.util.visualize import plot_descent_two_tiers
@@ -22,7 +22,7 @@ def main():
     controller = BatchGradientDescent(business, max_iters=300, lr=0.1, batch_size=10)
 
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma)
-    descent = GradientDescentAdam(system)
+    descent = GradientDescent(system)
 
     dual = DualAnnealing(system)
 

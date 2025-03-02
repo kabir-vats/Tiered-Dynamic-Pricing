@@ -2,7 +2,7 @@ import numpy as np
 import itertools
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from pricing.static.optimize import GradientDescent, DualAnnealing, GradientDescentAdam
+from pricing.static.optimize import GradientDescent, DualAnnealing
 from pricing.static.system import TieredPricingSystem
 from pricing.util.simulate import simulate_profits
 from pricing.util.visualize import (
@@ -20,7 +20,7 @@ def test_descent(system, bounds, n_samples):
 
     for costs in tqdm(sample_costs):
         system.costs = costs
-        descent = GradientDescentAdam(system)
+        descent = GradientDescent(system)
         dual = DualAnnealing(system)
 
         descent.maximize()
@@ -53,7 +53,7 @@ def test_lr():
         if difference > 0.01:
             system.costs = sample_costs[i]
             profits, samples = simulate_profits(system)
-            descent = GradientDescentAdam(system)
+            descent = GradientDescent(system)
             descent.maximize()
             plot_descent_two_tiers(
                 samples[0],
@@ -80,10 +80,10 @@ def main():
     )
     # profits, samples = simulate_profits(system, n_samples=100)
 
-    descent1 = GradientDescentAdam(system, gradient_method="numerical", max_iters=200)
+    descent1 = GradientDescent(system, gradient_method="numerical", max_iters=200)
     descent1.maximize()
 
-    descent2 = GradientDescentAdam(system, gradient_method="analytic", max_iters=200)
+    descent2 = GradientDescent(system, gradient_method="analytic", max_iters=200)
     descent2.maximize()
 
     dual = DualAnnealing(system)
