@@ -71,12 +71,14 @@ def test_lr():
 def main():
     np.set_printoptions(legacy="1.25")
     # test_lr()
-    C = [1, 4]
-    lambda_value = 2 / 3
-    mu = 2
+    C = [1, 2, 3, 10, 11, 12, 15]
+    lambda_value = 1 / 3
+    mu = 8
     sigma = 1
-    system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma, pdf_type="gaussian")
-    profits, samples = simulate_profits(system, n_samples=100)
+    system = TieredPricingSystem(
+        C, len(C), lambda_value, mu, sigma, pdf_type="gaussian"
+    )
+    # profits, samples = simulate_profits(system, n_samples=100)
 
     descent1 = GradientDescentAdam(system, gradient_method="numerical", max_iters=200)
     descent1.maximize()
@@ -95,7 +97,7 @@ def main():
 
     print(descent1.prices)
     print(dual.prices)
-    compare_descents_two_tiers(
+    """compare_descents_two_tiers(
         samples[0],
         samples[1],
         profits,
@@ -103,7 +105,7 @@ def main():
         descent2,
         f"costs: {list(system.costs)} lambda: {lambda_value} profit: {descent1.profit}",
     )
-    plt.show()
+    plt.show()"""
 
 
 if __name__ == "__main__":
