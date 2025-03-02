@@ -51,12 +51,8 @@ class BayesianEstimator:
         num_samples: int = 10000,
     ):
         self.particles = np.zeros((num_samples, 3))
-        self.particles[:, 0] = np.random.uniform(
-            a_prior[0], a_prior[1], num_samples
-        )
-        self.particles[:, 1] = np.random.uniform(
-            b_prior[0], b_prior[1], num_samples
-        )
+        self.particles[:, 0] = np.random.uniform(a_prior[0], a_prior[1], num_samples)
+        self.particles[:, 1] = np.random.uniform(b_prior[0], b_prior[1], num_samples)
         self.particles[:, 2] = np.random.uniform(
             lam_prior[0], lam_prior[1], num_samples
         )
@@ -137,7 +133,7 @@ class BayesianEstimator:
         for i, (a, b, lam) in enumerate(self.particles):
             prob = self.param_probability(a, b, lam, curr_trial)
             if prob > 0:
-                new_weights[i] = self.weights[i] * (prob ** 0.5)
+                new_weights[i] = self.weights[i] * (prob**0.5)
             else:
                 new_weights[i] = 0
 
@@ -147,6 +143,8 @@ class BayesianEstimator:
         self.b_mean = np.sum(self.particles[:, 1] * self.weights)
         self.lambda_mean = np.sum(self.particles[:, 2] * self.weights)
 
-        self.system.update_parameters((self.a_mean + self.b_mean) / 2,
-                                        (self.b_mean - self.a_mean) / 2,
-                                        self.lambda_mean)
+        self.system.update_parameters(
+            (self.a_mean + self.b_mean) / 2,
+            (self.b_mean - self.a_mean) / 2,
+            self.lambda_mean,
+        )
