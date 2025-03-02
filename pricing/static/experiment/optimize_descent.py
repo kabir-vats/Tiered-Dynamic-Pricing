@@ -78,7 +78,7 @@ def main():
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma, pdf_type="gaussian")
     profits, samples = simulate_profits(system, n_samples=100)
 
-    descent1 = GradientDescentAdam(system, gradient_method="analytic", max_iters=200)
+    descent1 = GradientDescentAdam(system, gradient_method="numerical", max_iters=200)
     descent1.maximize()
 
     descent2 = GradientDescentAdam(system, gradient_method="analytic", max_iters=200)

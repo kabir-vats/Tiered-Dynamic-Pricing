@@ -304,32 +304,43 @@ class GradientDescentAdam:
 
         grad = [0.0] * len(prices)
 
-        probs = [
-            norm.cdf(interval[1], loc=self.system.mu, scale=self.system.sigma) -
-            norm.cdf(interval[0], loc=self.system.mu, scale=self.system.sigma)
-            for interval in intervals
-        ]
+        if self.system.pdf_type == "uniform":
 
-        start, end = (
-            self.system.mu - self.system.sigma,
-            self.system.mu + self.system.sigma,
-        )
-        point_prob = 1 / (end - start)
-        for i in range(len(prices)):
-            prb_grads = []
-            for j in range(0, len(prices) + 1):
-                d_end = t_grads[j + 1][i + 1] if i + 1 in t_grads[j + 1] else 0
-                d_start = t_grads[j][i + 1] if i + 1 in t_grads[j] else 0
-                prb_grad = (d_end if intervals[j][1] <= end else 0) - (
-                    d_start if intervals[j][0] >= start else 0
-                )
-                weight = probs[j] if self.system.pdf_type == "gaussian" else point_prob
-                prb_grads.append(prb_grad * weight if (intervals[j][0] < intervals[j][1]) else 0)
-            grad[i] = sum((prices - costs) * (np.array(prb_grads[1:]))) + max(
-                (min(intervals[i + 1][1], end) - max(intervals[i + 1][0], start))
-                * point_prob,
-                0,
+            start, end = (
+                self.system.mu - self.system.sigma,
+                self.system.mu + self.system.sigma,
             )
+            point_prob = 1 / (end - start)
+            for i in range(len(prices)):
+                prb_grads = []
+                for j in range(0, len(prices) + 1):
+                    d_end = t_grads[j + 1][i + 1] if i + 1 in t_grads[j + 1] else 0
+                    d_start = t_grads[j][i + 1] if i + 1 in t_grads[j] else 0
+                    prb_grad = (d_end if intervals[j][1] <= end else 0) - (
+                        d_start if intervals[j][0] >= start else 0
+                    )
+                    prb_grads.append(
+                        prb_grad * point_prob if (intervals[j][0] < intervals[j][1]) else 0
+                    )
+                grad[i] = sum((prices - costs) * (np.array(prb_grads[1:]))) + max(
+                    (min(intervals[i + 1][1], end) - max(intervals[i + 1][0], start))
+                    * point_prob,
+                    0,
+                )
+        
+        else:
+            for i in range(len(prices)):
+                prb_grads = []
+                for j in range(0, len(prices) + 1):
+                    d_end = t_grads[j + 1][i + 1] if i + 1 in t_grads[j + 1] else 0
+                    d_start = t_grads[j][i + 1] if i + 1 in t_grads[j] else 0
+                    prb_grad = (d_end * norm.pdf(intervals[j][1], loc=self.system.mu, scale=self.system.sigma) - 
+                                d_start * norm.pdf(intervals[j][0], loc=self.system.mu, scale=self.system.sigma))
+                    prb_grads.append(prb_grad if (intervals[j][0] < intervals[j][1]) else 0)
+                grad[i] = (sum((prices - costs) * (np.array(prb_grads[1:]))) + 
+                            max(norm.cdf(intervals[i + 1][1], loc=self.system.mu, scale=self.system.sigma) -
+                                norm.cdf(intervals[i + 1][0], loc=self.system.mu, scale=self.system.sigma), 0))
+
 
         grad_ordered = [None] * len(prices)
         for i, idx in enumerate(sorted_indices):
