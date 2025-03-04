@@ -2,7 +2,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 from pricing.dynamic.business import Business
-from pricing.dynamic.controller import BatchGradientDescent
+from pricing.dynamic.controller import StochasticGradientDescent
 from pricing.dynamic.customer import Customer
 from pricing.static.optimize import DualAnnealing, GradientDescent
 from pricing.static.system import TieredPricingSystem
@@ -19,7 +19,7 @@ def main():
     sigma = 3
     customer = Customer(mu, sigma, lambda_value)
     business = Business(C, customer)
-    controller = BatchGradientDescent(business, max_iters=300, lr=0.1, batch_size=10)
+    controller = StochasticGradientDescent(business, max_iters=300, lr=0.1, batch_size=10)
 
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma)
     descent = GradientDescent(system)

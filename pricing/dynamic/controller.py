@@ -6,7 +6,7 @@ from pricing.static.system import TieredPricingSystem
 from pricing.dynamic.estimator import BayesianEstimator
 
 
-class BatchGradientDescent:
+class StochasticGradientDescent:
     """
     Class for performing stochastic gradient descent with batches
 
