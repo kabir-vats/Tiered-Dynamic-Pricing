@@ -43,6 +43,7 @@ class StochasticGradientDescent:
         beta2: float = 0.999,
         epsilon: float = 1e-8,
         smoothing_alpha: float = 0,
+        pdf_type: str = "uniform",
     ) -> None:
         self.business = business
         self.max_iters = max_iters
@@ -58,10 +59,10 @@ class StochasticGradientDescent:
             self.learning_rate = min(business.costs) / 5
 
         self.mock_system = TieredPricingSystem(
-            self.business.costs, len(self.business.costs), 1, 1, 1, "uniform"
+            self.business.costs, len(self.business.costs), 1, 1, 1, pdf_type=pdf_type
         )  # dummy values for mu, sigma, lambda
 
-        self.estimator = BayesianEstimator(self.mock_system)
+        self.estimator = BayesianEstimator.get(pdf_type, self.mock_system, 5000)
         self.mock_descent = GradientDescent(self.mock_system)
 
     def estimate_gradient(self) -> List[float]:
