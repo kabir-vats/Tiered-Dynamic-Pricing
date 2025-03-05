@@ -170,8 +170,8 @@ class GaussianBayesianEstimator:
     def __init__(
         self,
         system: TieredPricingSystem,
-        mu_prior: Tuple[float, float] = (0, 10),
-        sigma_prior: Tuple[float, float] = (0, 10),
+        mu_prior: Tuple[float, float] = (0, 5),
+        sigma_prior: Tuple[float, float] = (0, 5),
         lam_prior: Tuple[float, float] = (0, 1),
         num_samples: int = 10000,
     ):
@@ -249,6 +249,8 @@ class GaussianBayesianEstimator:
         base_intervals = np.zeros((len(self.system.costs)+1, 2, len(self.particles)))
 
         for index, (mu, sigma, lam) in enumerate(self.particles):
+            if self.weights[index] == 0:
+                continue
             self.system.update_parameters(mu, sigma, lam)
             intervals = self.system.calculate_intervals(trial.prices)
             base_intervals[:, :, index] = intervals
@@ -266,7 +268,6 @@ class GaussianBayesianEstimator:
                 # Calculate standardized upper bounds
                 z_upper = (upper - mus) / sigmas
                 upper_probs = norm.cdf(z_upper)
-                
                 
                 z_lower = (lower - mus) / sigmas
                 lower_probs = norm.cdf(z_lower)
@@ -352,6 +353,16 @@ class GaussianBayesianEstimator:
             # Handle numerical underflow by reinitializing
             self.weights = np.ones(self.num_samples) / self.num_samples
         
+        non_zero_indices = self.weights > 1e-6
+
+        if np.sum(non_zero_indices) < self.num_samples:
+            self.particles = self.particles[non_zero_indices]
+            self.weights = self.weights[non_zero_indices]
+            # Renormalize weights after filtering
+            self.weights = self.weights / np.sum(self.weights)
+            # Update the sample count
+            self.num_samples = len(self.particles)
+
         # Update parameter estimates
         self.mu_mean = np.sum(self.particles[:, 0] * self.weights)
         self.sigma_mean = np.sum(self.particles[:, 1] * self.weights)

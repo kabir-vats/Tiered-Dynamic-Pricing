@@ -62,7 +62,7 @@ class StochasticGradientDescent:
             self.business.costs, len(self.business.costs), 1, 1, 1, pdf_type=pdf_type
         )  # dummy values for mu, sigma, lambda
 
-        self.estimator = BayesianEstimator.get(pdf_type, self.mock_system, 10000)
+        self.estimator = BayesianEstimator.get(pdf_type, self.mock_system, 100000)
         self.mock_descent = GradientDescent(self.mock_system)
 
     def estimate_gradient(self) -> List[float]:
@@ -145,11 +145,22 @@ class StochasticGradientDescent:
         m_t = np.zeros(len(self.prices))  # First moment vector
         v_t = np.zeros(len(self.prices))  # Second moment vector
         t = 0  # Iteration counter
+        jump_threshold = 1000
 
         for i in tqdm(range(self.max_iters)):
             self.iters = i
             grad = np.array(self.estimate_gradient())
             t += 1
+
+            if len(self.estimator.particles) < jump_threshold:
+                self.mock_descent.maximize()
+                self.prices = self.mock_descent.prices
+                self.profit = self.mock_descent.profit
+                self.profit_history.append(self.profit)
+                self.price_history.append(self.prices.copy())
+                print(len(self.estimator.particles))
+                jump_threshold /= 2
+                continue
 
             # Update moments
             m_t = self.beta1 * m_t + (1 - self.beta1) * grad
