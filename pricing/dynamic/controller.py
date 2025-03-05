@@ -62,7 +62,7 @@ class StochasticGradientDescent:
             self.business.costs, len(self.business.costs), 1, 1, 1, pdf_type=pdf_type
         )  # dummy values for mu, sigma, lambda
 
-        self.estimator = BayesianEstimator.get(pdf_type, self.mock_system, 5000)
+        self.estimator = BayesianEstimator.get(pdf_type, self.mock_system, 10000)
         self.mock_descent = GradientDescent(self.mock_system)
 
     def estimate_gradient(self) -> List[float]:

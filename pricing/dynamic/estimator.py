@@ -3,6 +3,8 @@ import numpy as np
 from typing import List, Tuple
 from collections import Counter
 from pricing.static.system import TieredPricingSystem
+import sys
+from scipy.stats import norm
 
 
 class Trial:
@@ -145,7 +147,6 @@ class UniformBayesianEstimator:
         )
 
 
-
 class GaussianBayesianEstimator:
     """
     Maintains and updates beliefs about customer population parameters.
@@ -215,6 +216,73 @@ class GaussianBayesianEstimator:
             prob *= probs[i] ** trial.counts[i]
         return prob
     
+    def param_probability_batch(self, trial: Trial) -> np.ndarray:
+        """
+        Calculate probability of observed choices for all particles at once.
+        
+        Parameters
+        ----------
+        trial : Trial
+            Trial data containing prices and choices
+            
+        Returns
+        -------
+        np.ndarray
+            Array of probabilities for each particle
+        """
+        # Calculate factorial coefficient once
+        factorial_coef = math.factorial(len(trial.choices))
+        for i in range(len(self.system.costs) + 1):
+            count = trial.counts.get(i, 0)
+            if count > 0:
+                factorial_coef /= math.factorial(count)
+        
+        # Extract parameters from particles
+        mus = self.particles[:, 0]
+        sigmas = self.particles[:, 1]
+        lams = self.particles[:, 2]
+        
+        # Original parameters backup
+        orig_params = (self.system.mu, self.system.sigma, self.system.lam)
+        
+        # Calculate intervals for each tier using the current system configuration
+        base_intervals = np.zeros((len(self.system.costs)+1, 2, len(self.particles)))
+
+        for index, (mu, sigma, lam) in enumerate(self.particles):
+            self.system.update_parameters(mu, sigma, lam)
+            intervals = self.system.calculate_intervals(trial.prices)
+            base_intervals[:, :, index] = intervals
+        
+        # Initialize result with factorial coefficient
+        result = np.ones(self.num_samples) * factorial_coef
+        
+        # For each tier with non-zero choices
+        for tier, count in trial.counts.items():
+            if count > 0:
+                # Get interval bounds for this tier
+                lower, upper = base_intervals[tier]
+                
+                # Vectorized probability calculation for all particles at once
+                # Calculate standardized upper bounds
+                z_upper = (upper - mus) / sigmas
+                upper_probs = norm.cdf(z_upper)
+                
+                
+                z_lower = (lower - mus) / sigmas
+                lower_probs = norm.cdf(z_lower)
+                
+                # Tier probability is the difference between CDFs
+                tier_probs = upper_probs - lower_probs
+                
+                # Raise to the power of count and multiply with result
+                result *= tier_probs ** count
+        
+        # Restore original parameters
+        self.system.update_parameters(*orig_params)
+            
+        return result
+    
+    '''
     def update(self, prices: List[float], choices: List[int]) -> None:
         """
         Update parameter estimates based on a new observation.
@@ -258,6 +326,38 @@ class GaussianBayesianEstimator:
         self.sigma_mean = np.sum(self.particles[:, 1] * self.weights)
         self.lambda_mean = np.sum(self.particles[:, 2] * self.weights)
 
+        self.system.update_parameters(
+            self.mu_mean,
+            self.sigma_mean,
+            self.lambda_mean,
+        )
+    '''
+    def update(self, prices: List[float], choices: List[int]) -> None:
+        """
+        Update parameter estimates based on a new observation using vectorized operations.
+        """
+        curr_trial = Trial(prices, choices)
+        self.prev_trials.append(curr_trial)
+        
+        # Get probabilities for all particles in one batch calculation
+        probs = self.param_probability_batch(curr_trial)
+        
+        # Update weights
+        new_weights = self.weights * (probs ** 0.5)
+        sum_weights = np.sum(new_weights)
+        
+        if sum_weights > 0:
+            self.weights = new_weights / sum_weights
+        else:
+            # Handle numerical underflow by reinitializing
+            self.weights = np.ones(self.num_samples) / self.num_samples
+        
+        # Update parameter estimates
+        self.mu_mean = np.sum(self.particles[:, 0] * self.weights)
+        self.sigma_mean = np.sum(self.particles[:, 1] * self.weights)
+        self.lambda_mean = np.sum(self.particles[:, 2] * self.weights)
+        
+        # Update system parameters
         self.system.update_parameters(
             self.mu_mean,
             self.sigma_mean,
