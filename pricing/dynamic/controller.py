@@ -73,12 +73,24 @@ class StochasticGradientDescent:
         # Get batch of customer choices
         profits = []
         choices = []
-        for _ in range(self.batch_size):
+        '''for _ in range(self.batch_size):
             profit, choice = self.business.sell(self.prices)
+            profits.append(profit)
+            choices.append(choice)'''
+        
+
+        # Use jitter to sell at prices near or far from est. prices
+        jitter_factor = 0.5
+        jittered_prices = [p * (1 + jitter_factor * (2 * np.random.random() - 1)) 
+                            for p in self.prices]
+        jittered_prices = [max(cost, price) for cost, price in zip(self.business.costs, jittered_prices)]
+    
+        for _ in range(self.batch_size):
+            profit, choice = self.business.sell(jittered_prices)
             profits.append(profit)
             choices.append(choice)
 
-        self.estimator.update(self.prices, choices)
+        self.estimator.update(jittered_prices, choices)
 
         # self.profit_history.append(np.mean(profits))
         '''if self.iters % 10 == 0:
@@ -142,17 +154,17 @@ class StochasticGradientDescent:
         self.profit_history = [self.profit]
         self.price_history = [self.prices]
 
-        m_t = np.zeros(len(self.prices))  # First moment vector
+        m_t = np.zeros(len(self.prices))   # First moment vector
         v_t = np.zeros(len(self.prices))  # Second moment vector
         t = 0  # Iteration counter
-        jump_threshold = 1000
+        # jump_threshold = 1000
 
         for i in tqdm(range(self.max_iters)):
             self.iters = i
             grad = np.array(self.estimate_gradient())
             t += 1
 
-            if len(self.estimator.particles) < jump_threshold:
+            '''if len(self.estimator.particles) < jump_threshold:
                 self.mock_descent.maximize()
                 self.prices = self.mock_descent.prices
                 self.profit = self.mock_descent.profit
@@ -160,7 +172,7 @@ class StochasticGradientDescent:
                 self.price_history.append(self.prices.copy())
                 print(len(self.estimator.particles))
                 jump_threshold /= 2
-                continue
+                continue'''
 
             # Update moments
             m_t = self.beta1 * m_t + (1 - self.beta1) * grad
