@@ -170,8 +170,8 @@ class GaussianBayesianEstimator:
     def __init__(
         self,
         system: TieredPricingSystem,
-        mu_prior: Tuple[float, float] = (0, 5),
-        sigma_prior: Tuple[float, float] = (0, 5),
+        mu_prior: Tuple[float, float] = (0, 10),
+        sigma_prior: Tuple[float, float] = (0, 10),
         lam_prior: Tuple[float, float] = (0, 1),
         num_samples: int = 10000,
     ):
@@ -254,28 +254,22 @@ class GaussianBayesianEstimator:
             self.system.update_parameters(mu, sigma, lam)
             intervals = self.system.calculate_intervals(trial.prices)
             base_intervals[:, :, index] = intervals
-        
-        # Initialize result with factorial coefficient
+
         result = np.ones(self.num_samples) * factorial_coef
         
         # For each tier with non-zero choices
         for tier, count in trial.counts.items():
             if count > 0:
-                # Get interval bounds for this tier
                 lower, upper = base_intervals[tier]
-                
-                # Vectorized probability calculation for all particles at once
-                # Calculate standardized upper bounds
+
                 z_upper = (upper - mus) / sigmas
                 upper_probs = norm.cdf(z_upper)
                 
                 z_lower = (lower - mus) / sigmas
                 lower_probs = norm.cdf(z_lower)
-                
-                # Tier probability is the difference between CDFs
+
                 tier_probs = upper_probs - lower_probs
-                
-                # Raise to the power of count and multiply with result
+
                 result *= tier_probs ** count
         
         # Restore original parameters
@@ -388,3 +382,6 @@ class BayesianEstimator:
         else:
             estimator = GaussianBayesianEstimator(system, num_samples=num_samples)
         return estimator
+    
+
+

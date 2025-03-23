@@ -4,6 +4,7 @@ from tqdm import tqdm
 from pricing.static.optimize import GradientDescent
 from pricing.static.system import TieredPricingSystem
 from pricing.dynamic.estimator import BayesianEstimator
+from pricing.dynamic.efficient_estimator import EfficientGaussianEstimator
 
 
 class StochasticGradientDescent:
@@ -62,7 +63,8 @@ class StochasticGradientDescent:
             self.business.costs, len(self.business.costs), 1, 1, 1, pdf_type=pdf_type
         )  # dummy values for mu, sigma, lambda
 
-        self.estimator = BayesianEstimator.get(pdf_type, self.mock_system, 100000)
+        # self.estimator = BayesianEstimator.get(pdf_type, self.mock_system, 100000)
+        self.estimator = EfficientGaussianEstimator(self.mock_system)
         self.mock_descent = GradientDescent(self.mock_system)
 
     def estimate_gradient(self) -> List[float]:
