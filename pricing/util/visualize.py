@@ -203,6 +203,7 @@ def compare_n_descents_two_tiers(
     Y: list | np.ndarray,
     Z: list | np.ndarray,
     descents: list[GradientDescent],
+    labels: list[str],
     title: str,
     azim: int = 225,
     elev: int = 25,
@@ -225,14 +226,16 @@ def compare_n_descents_two_tiers(
 
     colors = ["green", "blue", "red", "purple", "orange", "yellow", "black"]
 
-    for descent in descents:
+    for i, descent in enumerate(descents):
         x = [price[0] for price in descent.price_history]
         y = [price[1] for price in descent.price_history]
         z = descent.profit_history
 
-        ax.plot(x, y, z, color=colors[descents.index(descent)], marker="o",
-                linewidth="0.5", markersize=0.7)
+        color = colors[i % len(colors)]
+        ax.plot(x, y, z, color=color, marker="o", linewidth="0.5", markersize=0.7, label=labels[i])
         ax.plot(x[-1], y[-1], z[-1], "ro")
+
+    ax.legend(loc="upper left")
 
     return fig
 
@@ -257,3 +260,11 @@ def plot_descent_one_tier(
     ax.plot(x, z, color="green", marker="o", linewidth="0.5", markersize=0.7)
 
     return fig
+
+
+def descent_title(costs: list[float], lambda_value: float, profit: float) -> str:
+    return f"C: {costs}, λ: {lambda_value}, F: {profit}"
+
+
+def descent_label(lr: float) -> str:
+    return f"η: {lr}"
