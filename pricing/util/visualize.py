@@ -265,7 +265,7 @@ def plot_descent_one_tier(
 
 # ...existing code...
 
-def plot_descent_3d(
+def plot_descent_three_tiers(
     descent: GradientDescent,
     title: str,
     elev: int = 30,
@@ -308,7 +308,6 @@ def plot_descent_3d(
     fig : matplotlib.figure.Figure
         A Matplotlib Figure object containing the generated 3D plot.
     """
-    # Get prices and profits from descent
     prices = descent.price_history
     profits = descent.profit_history
     
@@ -316,15 +315,12 @@ def plot_descent_3d(
     x = [price[0] for price in prices]
     y = [price[1] for price in prices]
     z = [price[2] for price in prices]
-    
-    # Create figure and 3D axis
+
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111, projection="3d")
-    
-    # Plot trajectory with color gradient based on profit
+
     points = ax.scatter(x, y, z, c=profits, cmap=colormap, s=marker_size)
-    
-    # Connect points with lines
+
     for i in range(len(x) - 1):
         ax.plot(
             [x[i], x[i+1]], 
@@ -334,41 +330,76 @@ def plot_descent_3d(
             linewidth=line_width
         )
     
-    # Highlight start and end points if requested
     if show_start_end:
         ax.scatter(x[0], y[0], z[0], color='red', s=marker_size*3, marker='o', label='Start')
         ax.scatter(x[-1], y[-1], z[-1], color='green', s=marker_size*3, marker='s', label='End')
         ax.legend()
-    
-    # Add colorbar if requested
+
     if include_colorbar:
         cbar = fig.colorbar(points, ax=ax, shrink=0.7)
         cbar.set_label('Profit')
     
-    # Set labels and title
-    if len(prices[0]) == 1:
-        ax.set_xlabel('Price')
-        ax.set_ylabel('Y')
-    else:
-        ax.set_xlabel('Tier 1 Price')
-        ax.set_ylabel('Tier 2 Price')
-        
-    if len(prices[0]) <= 2:
-        ax.set_zlabel('Profit')
-    else:
-        ax.set_zlabel('Tier 3 Price')
+    ax.set_xlabel('Tier 1 Price')
+    ax.set_ylabel('Tier 2 Price') 
+    ax.set_zlabel('Tier 3 Price')
     
     ax.set_title(title)
-    
-    # Set view angle
     ax.view_init(elev=elev, azim=azim)
-    
-    # Add grid
     ax.grid(True)
-    
     return fig
 
 
+def compare_descents_three_tiers(
+    descents: list[GradientDescent],
+    labels: list[str],
+    title: str,
+    elev: int = 30,
+    azim: int = 45,
+    figsize: tuple = (10, 8),
+    colormap: str = "viridis",
+    marker_size: float = 5,
+    line_width: float = 1.5,
+    show_start_end: bool = True,
+    include_colorbar: bool = True
+)   -> plt.Figure:
+    
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot(111, projection="3d")
+
+    colors = ["green", "blue", "red", "purple", "orange", "yellow", "black"]
+
+    for i, descent in enumerate(descents):
+        x = [price[0] for price in descent.price_history]
+        y = [price[1] for price in descent.price_history]
+        z = [price[2] for price in descent.price_history]
+        profits = descent.profit_history
+
+        color = colors[i % len(colors)]
+        points = ax.scatter(x, y, z, c=profits, cmap=colormap, s=marker_size)
+
+        ax.plot(
+            x, 
+            y,
+            z, 
+            color=color,
+            label=labels[i],
+            linewidth=line_width
+        )
+        if show_start_end:
+            ax.scatter(x[0], y[0], z[0], color=color, s=marker_size*3, marker='o')
+            ax.scatter(x[-1], y[-1], z[-1], color=color, s=marker_size*3, marker='s')
+        
+
+    ax.legend(loc="upper left")
+    ax.set_xlabel('Tier 1 Price')
+    ax.set_ylabel('Tier 2 Price') 
+    ax.set_zlabel('Tier 3 Price')
+    
+    ax.set_title(title)
+    ax.view_init(elev=elev, azim=azim)
+    ax.grid(True)
+    return fig
+    
 
 def descent_title(costs: list[float], lambda_value: float, profit: float, distribution: str, mu: float, sigma: float) -> str:
     title = f"C: {costs}, λ: {lambda_value}, f(v): {distribution}"
@@ -380,3 +411,7 @@ def descent_title(costs: list[float], lambda_value: float, profit: float, distri
 
 def descent_label_lr(lr: float) -> str:
     return f"η: {lr}"
+
+
+def descent_label_lr_profit(lr: float, profit: float) -> str:
+    return f"η: {lr}, F: {profit}"
