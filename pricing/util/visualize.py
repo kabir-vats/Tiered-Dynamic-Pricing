@@ -352,6 +352,7 @@ def plot_descent_three_tiers(
 def compare_descents_three_tiers(
     descents: list[GradientDescent],
     labels: list[str],
+    optimal_prices: tuple[float, float, float],
     title: str,
     elev: int = 30,
     azim: int = 45,
@@ -388,7 +389,8 @@ def compare_descents_three_tiers(
         if show_start_end:
             ax.scatter(x[0], y[0], z[0], color=color, s=marker_size*3, marker='o')
             ax.scatter(x[-1], y[-1], z[-1], color=color, s=marker_size*3, marker='s')
-        
+    
+    ax.scatter(optimal_prices[0], optimal_prices[1], optimal_prices[2], color='red', s=marker_size*10, marker='s', label='Optimal Prices')
 
     ax.legend(loc="upper left")
     ax.set_xlabel('Tier 1 Price')

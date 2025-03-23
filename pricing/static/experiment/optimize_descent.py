@@ -97,7 +97,7 @@ def test_lr_two_tiers():
     plt.show()
 
 def test_lr_three_tiers():
-    C = [1, 5, 9]
+    C = [1, 5, 30]
     lambda_value = 2 / 3
     mu = 3
     sigma = 1
@@ -119,7 +119,7 @@ def test_lr_three_tiers():
     print(system.tier_probabilities(descents[0].prices))
 
     title = descent_title(C, lambda_value, max([descent.profit for descent in descents]), "uniform", mu, sigma)
-    fig = compare_descents_three_tiers(descents, labels, title)
+    fig = compare_descents_three_tiers(descents, labels, dual.prices, title)
     plt.show()
 
 def main():
