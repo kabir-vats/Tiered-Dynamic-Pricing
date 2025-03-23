@@ -262,8 +262,64 @@ def plot_descent_one_tier(
     return fig
 
 
-def descent_title(costs: list[float], lambda_value: float, profit: float) -> str:
-    return f"C: {costs}, λ: {lambda_value}, F: {profit}"
+def plot_descent_three_tiers_parallel(
+    descent: GradientDescent,
+    title: str = "Three-Tier Pricing Gradient Descent"
+) -> plt.Figure:
+    """
+    Creates a parallel coordinates plot showing the descent path through
+    the 4D space of three prices and profit.
+    """
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Extract data from descent
+    data = np.array([
+        [price[0] for price in descent.price_history],
+        [price[1] for price in descent.price_history],
+        [price[2] for price in descent.price_history],
+        descent.profit_history
+    ]).T
+    
+    # Create a colormap based on iteration number
+    iterations = list(range(len(descent.price_history)))
+    
+    # Plot each iteration as a line across the parallel axes
+    for i in range(len(iterations)-1):
+        # Use color gradient to show progression
+        progress = i / (len(iterations)-1)
+        color = plt.cm.viridis(progress)
+        
+        # Plot the line segments between parallel coordinates
+        for dim in range(3):
+            ax.plot([dim, dim+1], [data[i, dim], data[i, dim+1]], 
+                    color=color, linewidth=1, alpha=0.7)
+    
+    # Highlight the final point
+    for dim in range(3):
+        ax.plot([dim, dim+1], [data[-1, dim], data[-1, dim+1]], 
+                'r-', linewidth=2)
+    
+    # Set up the axes
+    ax.set_xticks(range(4))
+    ax.set_xticklabels(['Tier 1 Price', 'Tier 2 Price', 'Tier 3 Price', 'Profit'])
+    ax.set_title(title)
+    
+    # Add colorbar to show progression
+    sm = plt.cm.ScalarMappable(cmap=plt.cm.viridis, 
+                               norm=plt.Normalize(0, len(iterations)-1))
+    sm.set_array([])
+    cbar = plt.colorbar(sm)
+    cbar.set_label('Iteration')
+    
+    return fig
+
+
+def descent_title(costs: list[float], lambda_value: float, profit: float, distribution: str, mu: float, sigma: float) -> str:
+    title = f"C: {costs}, λ: {lambda_value}, f(v): {distribution}"
+    if distribution == 'gaussian':
+        return f"{title}, μ: {mu}, σ: {sigma}, F: {profit}"
+    else:
+        return f"{title}, α: {mu-sigma}, β: {mu+sigma}, F: {profit}"
 
 
 def descent_label_lr(lr: float) -> str:

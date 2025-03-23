@@ -41,4 +41,3 @@ def main():
                     sigma = 1
                     pdf_type = "gaussian"
                     profits.append(compare_convergence(C, lam, mu, sigma, pdf_type))
-

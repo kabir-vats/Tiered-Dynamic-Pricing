@@ -78,7 +78,7 @@ def test_lr_two_tiers():
     mu = 2
     sigma = 1
     learning_rates = [0.1, 0.01, 0.001, 0.0001]
-    system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma, pdf_type="uniform")
+    system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma, pdf_type="gaussian")
 
     profits, samples = simulate_profits(system, n_samples=100)
 
@@ -89,7 +89,7 @@ def test_lr_two_tiers():
         descents.append(descent)
     
     labels = [descent_label_lr(lr) for lr in learning_rates]
-    title = descent_title(C, lambda_value, max([descent.profit for descent in descents]))
+    title = descent_title(C, lambda_value, max([descent.profit for descent in descents]), "gaussian", mu, sigma)
     compare_n_descents_two_tiers(samples[0], samples[1], profits, descents, labels, title)
     plt.show()
 
