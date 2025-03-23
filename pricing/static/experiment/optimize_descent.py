@@ -11,7 +11,8 @@ from pricing.util.visualize import (
     plot_descent_one_tier,
     compare_descents_two_tiers,
     compare_n_descents_two_tiers,
-    descent_title
+    descent_title,
+    plot_descent_3d
 )
 
 
@@ -93,7 +94,25 @@ def test_lr_two_tiers():
     compare_n_descents_two_tiers(samples[0], samples[1], profits, descents, labels, title)
     plt.show()
 
+def test_lr_three_tiers():
+    C = [1, 3, 5]
+    lambda_value = 2 / 3
+    mu = 2
+    sigma = 1
+    learning_rates = [0.1, 0.01, 0.001, 0.0001]
+    system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma, pdf_type="gaussian")
+    profits, samples = simulate_profits(system, n_samples=25)
 
+    descent = GradientDescent(system, lr=0.01)
+    descent.maximize()
+
+    dual = DualAnnealing(system)
+    dual.maximize()
+    print(dual.profit)
+
+    title = descent_title(C, lambda_value, descent.profit, "gaussian", mu, sigma)
+    figs = plot_descent_3d(descent, title)
+    plt.show()
 
 def main():
     np.set_printoptions(legacy="1.25")
@@ -138,4 +157,4 @@ def main():
 
 
 if __name__ == "__main__":
-    test_lr_two_tiers()
+    test_lr_three_tiers()

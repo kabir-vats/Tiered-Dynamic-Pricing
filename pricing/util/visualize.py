@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from pricing.static.optimize import GradientDescent
+from matplotlib.animation import FuncAnimation
 
 
 def surface_plot(
@@ -262,56 +263,111 @@ def plot_descent_one_tier(
     return fig
 
 
-def plot_descent_three_tiers_parallel(
+# ...existing code...
+
+def plot_descent_3d(
     descent: GradientDescent,
-    title: str = "Three-Tier Pricing Gradient Descent"
+    title: str,
+    elev: int = 30,
+    azim: int = 45,
+    figsize: tuple = (10, 8),
+    colormap: str = "viridis",
+    marker_size: float = 5,
+    line_width: float = 1.5,
+    show_start_end: bool = True,
+    include_colorbar: bool = True
 ) -> plt.Figure:
     """
-    Creates a parallel coordinates plot showing the descent path through
-    the 4D space of three prices and profit.
+    Create a 3D plot of optimization trajectory with points color-coded by profit.
+
+    Parameters
+    ----------
+    descent : GradientDescent
+        The gradient descent object containing price_history and profit_history.
+    title : str
+        Title of the plot.
+    elev : int, optional
+        Elevation angle for 3D view (default: 30).
+    azim : int, optional
+        Azimuthal angle for 3D view (default: 45).
+    figsize : tuple, optional
+        Figure size as (width, height) in inches (default: (10, 8)).
+    colormap : str, optional
+        Colormap to represent profit values (default: 'viridis').
+    marker_size : float, optional
+        Size of markers for data points (default: 5).
+    line_width : float, optional
+        Width of the trajectory line (default: 1.5).
+    show_start_end : bool, optional
+        If True, highlight start and end points (default: True).
+    include_colorbar : bool, optional
+        If True, add a colorbar for profit values (default: True).
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        A Matplotlib Figure object containing the generated 3D plot.
     """
-    fig, ax = plt.subplots(figsize=(10, 6))
+    # Get prices and profits from descent
+    prices = descent.price_history
+    profits = descent.profit_history
     
-    # Extract data from descent
-    data = np.array([
-        [price[0] for price in descent.price_history],
-        [price[1] for price in descent.price_history],
-        [price[2] for price in descent.price_history],
-        descent.profit_history
-    ]).T
     
-    # Create a colormap based on iteration number
-    iterations = list(range(len(descent.price_history)))
+    x = [price[0] for price in prices]
+    y = [price[1] for price in prices]
+    z = [price[2] for price in prices]
     
-    # Plot each iteration as a line across the parallel axes
-    for i in range(len(iterations)-1):
-        # Use color gradient to show progression
-        progress = i / (len(iterations)-1)
-        color = plt.cm.viridis(progress)
+    # Create figure and 3D axis
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot(111, projection="3d")
+    
+    # Plot trajectory with color gradient based on profit
+    points = ax.scatter(x, y, z, c=profits, cmap=colormap, s=marker_size)
+    
+    # Connect points with lines
+    for i in range(len(x) - 1):
+        ax.plot(
+            [x[i], x[i+1]], 
+            [y[i], y[i+1]], 
+            [z[i], z[i+1]], 
+            color=plt.cm.get_cmap(colormap)(i / len(x)),
+            linewidth=line_width
+        )
+    
+    # Highlight start and end points if requested
+    if show_start_end:
+        ax.scatter(x[0], y[0], z[0], color='red', s=marker_size*3, marker='o', label='Start')
+        ax.scatter(x[-1], y[-1], z[-1], color='green', s=marker_size*3, marker='s', label='End')
+        ax.legend()
+    
+    # Add colorbar if requested
+    if include_colorbar:
+        cbar = fig.colorbar(points, ax=ax, shrink=0.7)
+        cbar.set_label('Profit')
+    
+    # Set labels and title
+    if len(prices[0]) == 1:
+        ax.set_xlabel('Price')
+        ax.set_ylabel('Y')
+    else:
+        ax.set_xlabel('Tier 1 Price')
+        ax.set_ylabel('Tier 2 Price')
         
-        # Plot the line segments between parallel coordinates
-        for dim in range(3):
-            ax.plot([dim, dim+1], [data[i, dim], data[i, dim+1]], 
-                    color=color, linewidth=1, alpha=0.7)
+    if len(prices[0]) <= 2:
+        ax.set_zlabel('Profit')
+    else:
+        ax.set_zlabel('Tier 3 Price')
     
-    # Highlight the final point
-    for dim in range(3):
-        ax.plot([dim, dim+1], [data[-1, dim], data[-1, dim+1]], 
-                'r-', linewidth=2)
-    
-    # Set up the axes
-    ax.set_xticks(range(4))
-    ax.set_xticklabels(['Tier 1 Price', 'Tier 2 Price', 'Tier 3 Price', 'Profit'])
     ax.set_title(title)
     
-    # Add colorbar to show progression
-    sm = plt.cm.ScalarMappable(cmap=plt.cm.viridis, 
-                               norm=plt.Normalize(0, len(iterations)-1))
-    sm.set_array([])
-    cbar = plt.colorbar(sm)
-    cbar.set_label('Iteration')
+    # Set view angle
+    ax.view_init(elev=elev, azim=azim)
+    
+    # Add grid
+    ax.grid(True)
     
     return fig
+
 
 
 def descent_title(costs: list[float], lambda_value: float, profit: float, distribution: str, mu: float, sigma: float) -> str:
