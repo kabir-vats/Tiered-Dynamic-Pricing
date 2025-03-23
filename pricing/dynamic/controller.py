@@ -157,37 +157,12 @@ class StochasticGradientDescent:
         m_t = np.zeros(len(self.prices))   # First moment vector
         v_t = np.zeros(len(self.prices))  # Second moment vector
         t = 0  # Iteration counter
-        # jump_threshold = 1000
 
         for i in tqdm(range(self.max_iters)):
             self.iters = i
-            # grad = np.array(self.estimate_gradient())
+            grad = np.array(self.estimate_gradient())
             t += 1
-
-            profits = []
-            choices = []
-            jitter_factor = 0.5
-            jittered_prices = [p * (1 + jitter_factor * (2 * np.random.random() - 1)) 
-                                for p in self.prices]
-            jittered_prices = [max(cost, price) for cost, price in zip(self.business.costs, jittered_prices)]
-            profit, choice = self.business.sell(jittered_prices)
-            profits.append(profit)
-            choices.append(choice)
-            self.estimator.update(jittered_prices, choices)
-
-            self.mock_descent.maximize()
-            prices_next = [(p*0.8) + (q*0.2) for p, q in zip(self.prices, self.mock_descent.prices)]
-
-            '''if len(self.estimator.particles) < jump_threshold:
-                self.mock_descent.maximize()
-                self.prices = self.mock_descent.prices
-                self.profit = self.mock_descent.profit
-                self.profit_history.append(self.profit)
-                self.price_history.append(self.prices.copy())
-                print(len(self.estimator.particles))
-                jump_threshold /= 2
-                continue'''
-            '''
+            
             # Update moments
             m_t = self.beta1 * m_t + (1 - self.beta1) * grad
             v_t = self.beta2 * v_t + (1 - self.beta2) * (grad**2)
@@ -198,7 +173,7 @@ class StochasticGradientDescent:
 
             prices_next = np.array(self.prices) + (
                 self.learning_rate * m_t_hat / (np.sqrt(v_t_hat) + self.epsilon)
-            )'''
+            )
 
             self.prices = prices_next.copy()
             self.profit = self.mock_system.profit(self.prices)

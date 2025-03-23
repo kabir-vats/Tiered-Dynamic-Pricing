@@ -68,6 +68,9 @@ def test_lr():
     plt.show()
 
 
+def compare_n_descents_two_tiers():
+    
+
 def main():
     np.set_printoptions(legacy="1.25")
     # test_lr()
