@@ -67,8 +67,8 @@ def surface_plot(
 
     surface = ax.plot_surface(X_grid, Y_grid, Z_grid, cmap=cmap, alpha=alpha)
 
-    cbar = fig.colorbar(surface, shrink=0.5, aspect=10)
-    cbar.set_label(zlabel)
+    #cbar = fig.colorbar(surface, shrink=0.5, aspect=10)
+    #cbar.set_label(zlabel)
 
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -266,5 +266,5 @@ def descent_title(costs: list[float], lambda_value: float, profit: float) -> str
     return f"C: {costs}, λ: {lambda_value}, F: {profit}"
 
 
-def descent_label(lr: float) -> str:
+def descent_label_lr(lr: float) -> str:
     return f"η: {lr}"

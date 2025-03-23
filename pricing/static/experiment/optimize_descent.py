@@ -6,9 +6,12 @@ from pricing.static.optimize import GradientDescent, DualAnnealing
 from pricing.static.system import TieredPricingSystem
 from pricing.util.simulate import simulate_profits
 from pricing.util.visualize import (
+    descent_label_lr,
     plot_descent_two_tiers,
     plot_descent_one_tier,
     compare_descents_two_tiers,
+    compare_n_descents_two_tiers,
+    descent_title
 )
 
 
@@ -68,11 +71,34 @@ def test_lr():
     plt.show()
 
 
-def compare_n_descents_two_tiers():
+def test_lr_two_tiers():
+    print('test')
+    C = [2,5]
+    lambda_value = 2 / 3
+    mu = 2
+    sigma = 1
+    learning_rates = [0.1, 0.01, 0.001, 0.0001]
+    system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma, pdf_type="uniform")
+
+    profits, samples = simulate_profits(system, n_samples=100)
+
+    descents = []
+    for lr in learning_rates:
+        descent = GradientDescent(system, lr=lr)
+        descent.maximize()
+        descents.append(descent)
     
+    labels = [descent_label_lr(lr) for lr in learning_rates]
+    title = descent_title(C, lambda_value, max([descent.profit for descent in descents]))
+    compare_n_descents_two_tiers(samples[0], samples[1], profits, descents, labels, title)
+    plt.show()
+
+
 
 def main():
     np.set_printoptions(legacy="1.25")
+    test_lr_two_tiers()
+    input('ok')
     # test_lr()
     C = [1, 2, 3, 10, 11, 12, 15]
     lambda_value = 1 / 3
@@ -112,4 +138,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    test_lr_two_tiers()
