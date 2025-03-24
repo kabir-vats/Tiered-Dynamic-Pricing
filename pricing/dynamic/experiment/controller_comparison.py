@@ -21,21 +21,21 @@ import numpy as np
 
 def compare_pricing_three_tiers():
     np.set_printoptions(legacy="1.25")
-    C = [1, 5, 30]
-    lambda_value = 2 / 3
+    C = [1, 5, 8]
+    lambda_value = 1 / 2
     mu = 3
     sigma = 1
-    learning_rates = [0.01, 0.05, 0.1]
+    learning_rates = [0.05, 0.05, 0.05, 0.05, 0.05]
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma, pdf_type="gaussian")
     customer = Customer(mu, sigma, lambda_value, pdf_type="gaussian")
     business = Business(C, customer)
     descents = []
     labels = []
-    for lr in learning_rates:
-        descent = StochasticGradientDescent(business, batch_size=1, max_iters=500, pdf_type="gaussian", lr=lr)
+    for i, lr in enumerate(learning_rates):
+        descent = StochasticGradientDescent(business, batch_size=1, max_iters=500, pdf_type="gaussian", lr=lr, jitter_factor=i * 0.1)
         descent.maximize()
         descents.append(descent)
-        labels.append(descent_label_lr_profit(lr, descent.profit))
+        labels.append(descent_label_lr_profit(lr, system.profit(descent.prices))+ f'jitter: {i * 0.1}')
 
     dual = DualAnnealing(system)
     dual.maximize()
@@ -43,7 +43,7 @@ def compare_pricing_three_tiers():
 
     print(system.tier_probabilities(descents[0].prices))
 
-    title = descent_title(C, lambda_value, max([descent.profit for descent in descents]), "gaussian", mu, sigma)
+    title = descent_title(C, lambda_value, dual.profit, "gaussian", mu, sigma)
     fig = compare_descents_three_tiers(descents, labels, dual.prices, title)
     plt.show()
 
@@ -72,7 +72,7 @@ def test_lr_three_tiers():
 
     print(system.tier_probabilities(descents[0].prices))
 
-    title = descent_title(C, lambda_value, max([descent.profit for descent in descents]), "uniform", mu, sigma)
+    title = descent_title(C, lambda_value, dual.profit, "uniform", mu, sigma)
     fig = compare_descents_three_tiers(descents, labels, dual.prices, title)
     plt.show()
 
@@ -103,5 +103,5 @@ def compare_pricing_two_tiers():
 
 
 if __name__ == "__main__":
-    compare_pricing_two_tiers()
+    compare_pricing_three_tiers()
     input('ok')

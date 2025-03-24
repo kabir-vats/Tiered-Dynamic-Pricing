@@ -358,7 +358,7 @@ def compare_descents_three_tiers(
     azim: int = 45,
     figsize: tuple = (10, 8),
     colormap: str = "viridis",
-    marker_size: float = 5,
+    marker_size: float = 3,
     line_width: float = 1.5,
     show_start_end: bool = True,
     include_colorbar: bool = True
@@ -367,7 +367,7 @@ def compare_descents_three_tiers(
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111, projection="3d")
 
-    colors = ["green", "blue", "red", "purple", "orange", "yellow", "black"]
+    colors = ["green", "blue", "purple", "orange", "yellow", "black"]
 
     for i, descent in enumerate(descents):
         x = [price[0] for price in descent.price_history]
@@ -383,12 +383,10 @@ def compare_descents_three_tiers(
             y,
             z, 
             color=color,
-            label=labels[i],
             linewidth=line_width
         )
         if show_start_end:
-            ax.scatter(x[0], y[0], z[0], color=color, s=marker_size*3, marker='o')
-            ax.scatter(x[-1], y[-1], z[-1], color=color, s=marker_size*3, marker='s')
+            ax.scatter(x[-1], y[-1], z[-1], color=color, s=marker_size*10, label=labels[i], marker='s')
     
     ax.scatter(optimal_prices[0], optimal_prices[1], optimal_prices[2], color='red', s=marker_size*10, marker='s', label='Optimal Prices')
 

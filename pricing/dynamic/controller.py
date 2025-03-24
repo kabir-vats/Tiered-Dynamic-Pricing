@@ -45,6 +45,7 @@ class StochasticGradientDescent:
         epsilon: float = 1e-8,
         smoothing_alpha: float = 0,
         pdf_type: str = "uniform",
+        jitter_factor: float = 0.05,
     ) -> None:
         self.business = business
         self.max_iters = max_iters
@@ -56,6 +57,7 @@ class StochasticGradientDescent:
         self.epsilon = epsilon
         self.smoothing_alpha = smoothing_alpha
         self.smoothed_grad = None
+        self.jitter_factor = jitter_factor
         if lr is None:
             self.learning_rate = min(business.costs) / 5
 
@@ -82,8 +84,7 @@ class StochasticGradientDescent:
         
 
         # Use jitter to sell at prices near or far from est. prices
-        jitter_factor = 0.5
-        jittered_prices = [p * (1 + jitter_factor * (2 * np.random.random() - 1)) 
+        jittered_prices = [p * (1 + self.jitter_factor * (2 * np.random.random() - 1)) 
                             for p in self.prices]
         jittered_prices = [max(cost, price) for cost, price in zip(self.business.costs, jittered_prices)]
     

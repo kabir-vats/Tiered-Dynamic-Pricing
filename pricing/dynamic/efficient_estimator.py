@@ -69,7 +69,7 @@ class EfficientGaussianEstimator:
         return log_probs
 
     def _resample_particles(self):
-        print('test')
+        # print('test')
         indices = np.random.choice(len(self.particles), size=self.num_samples, p=self.weights)
         resampled_particles = self.particles[indices]
         noise = np.random.normal(loc=0.0, scale=(0.05, 0.05, 0.01), size=resampled_particles.shape)

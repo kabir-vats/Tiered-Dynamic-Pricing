@@ -110,7 +110,7 @@ def test_lr_three_tiers():
         descent = GradientDescent(system, lr=lr)
         descent.maximize()
         descents.append(descent)
-        labels.append(descent_label_lr_profit(lr, descent.profit))
+        labels.append(descent_label_lr_profit(lr, system.profit(descent.prices))
 
     dual = DualAnnealing(system)
     dual.maximize()
