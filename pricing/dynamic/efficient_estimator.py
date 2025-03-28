@@ -28,6 +28,8 @@ class EfficientGaussianEstimator:
         self.lam_prior = lam_prior
         self.num_samples = num_samples
 
+        self.history = []
+
         self.particles = self._generate_particles()
         self.weights = np.ones(self.num_samples) / self.num_samples
         self.prev_trials = []
@@ -92,6 +94,10 @@ class EfficientGaussianEstimator:
         self.mu_mean = np.sum(self.particles[:, 0] * self.weights)
         self.sigma_mean = np.sum(self.particles[:, 1] * self.weights)
         self.lambda_mean = np.sum(self.particles[:, 2] * self.weights)
+
+        self.history.append(
+            (self.mu_mean, self.sigma_mean, self.lambda_mean)
+        )
 
         self.system.update_parameters(
             self.mu_mean, self.sigma_mean, self.lambda_mean

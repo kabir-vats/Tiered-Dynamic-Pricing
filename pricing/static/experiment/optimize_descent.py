@@ -97,12 +97,12 @@ def test_lr_two_tiers():
     plt.show()
 
 def test_lr_three_tiers():
-    C = [1, 5, 30]
-    lambda_value = 2 / 3
+    C = [1, 8, 20]
+    lambda_value = 2/3
     mu = 3
     sigma = 1
     learning_rates = [0.01, 0.001]
-    system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma, pdf_type="uniform")
+    system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma, pdf_type="gaussian")
     
     descents = []
     labels = []
@@ -110,7 +110,7 @@ def test_lr_three_tiers():
         descent = GradientDescent(system, lr=lr)
         descent.maximize()
         descents.append(descent)
-        labels.append(descent_label_lr_profit(lr, system.profit(descent.prices))
+        labels.append(descent_label_lr_profit(lr, system.profit(descent.prices)))
 
     dual = DualAnnealing(system)
     dual.maximize()
@@ -118,7 +118,7 @@ def test_lr_three_tiers():
 
     print(system.tier_probabilities(descents[0].prices))
 
-    title = descent_title(C, lambda_value, max([descent.profit for descent in descents]), "uniform", mu, sigma)
+    title = descent_title(C, lambda_value, max([descent.profit for descent in descents]), "gaussian", mu, sigma)
     fig = compare_descents_three_tiers(descents, labels, dual.prices, title)
     plt.show()
 
