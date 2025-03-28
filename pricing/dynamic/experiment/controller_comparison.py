@@ -15,7 +15,9 @@ from pricing.util.visualize import (
     descent_label_lr_profit,
     plot_choice_distribution,
     plot_parameter_history, 
-    compare_parameter_history
+    compare_parameter_history,
+    compare_profit_history,
+    compare_convergence_metrics,
 )
 from pricing.util.simulate import simulate_profits
 import matplotlib.pyplot as plt
@@ -28,14 +30,14 @@ def compare_pricing_three_tiers():
     lambda_value = 2 / 3
     mu = 3
     sigma = 1
-    max_iters = 300
-    learning_rates = [0.05, 0.05, 0.05, 0.05]
+    max_iters = 500
+    learning_rates = [0.05, 0.1, 0.05, 0.1]
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma, pdf_type="gaussian")
     customer = Customer(mu, sigma, lambda_value, pdf_type="gaussian")
     business = Business(C, customer)
     descents = []
     estimators = []
-    estimator_labels = []
+    smaller_labels = []
     labels = []
     for i, lr in enumerate(learning_rates):
         jitter_factor = 0.1 * (i > 1)
@@ -44,7 +46,9 @@ def compare_pricing_three_tiers():
         descents.append(descent)
         labels.append(f'Descent: {i} ' + descent_label_lr_profit(lr, system.profit(descent.prices))+ f' jitter: {jitter_factor}')
         estimators.append(descent.estimator)
-        estimator_labels.append(f"Descent: {i} jitter: {jitter_factor}")
+        smaller_labels.append(f'Descent: {i}')
+
+    colors = ["#3264a8", "#323aa8", "#a8326f", "#a83255"]
 
     dual = DualAnnealing(system)
     dual.maximize()
@@ -52,10 +56,30 @@ def compare_pricing_three_tiers():
 
     print(system.tier_probabilities(descents[0].prices))
 
-    title = descent_title(C, lambda_value, dual.profit, "gaussian", mu, sigma)
-    fig1 = compare_parameter_history(estimators, estimator_labels, true_params=[mu, sigma, lambda_value])
+    title = descent_title(C, lambda_value, dual.profit, "gaussian", mu, sigma) + f' Iterations: {max_iters}'
+
+    fig = compare_profit_history(
+        controllers=descents,
+        controller_labels=smaller_labels,
+        system=system,
+        optimal_profit=dual.profit,
+        colors=colors,
+        window_size=5  # Apply smoothing with window of 5
+    )
     plt.show()
-    fig = compare_descents_three_tiers(descents, labels, dual.prices, title)
+
+    fig = compare_convergence_metrics(
+        controllers=descents,
+        controller_labels=smaller_labels,
+        system=system,
+        optimal_prices=dual.prices,
+        optimal_profit=dual.profit,
+        colors=colors,
+    )
+    plt.show()
+    fig1 = compare_parameter_history(estimators, smaller_labels, true_params=[mu, sigma, lambda_value], colors=colors)
+    plt.show()
+    fig = compare_descents_three_tiers(descents, labels, dual.prices, dual.profit, title, colors=colors)
     plt.show()
 
 

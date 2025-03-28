@@ -119,7 +119,7 @@ def test_lr_three_tiers():
     print(system.tier_probabilities(descents[0].prices))
 
     title = descent_title(C, lambda_value, max([descent.profit for descent in descents]), "gaussian", mu, sigma)
-    fig = compare_descents_three_tiers(descents, labels, dual.prices, title)
+    fig = compare_descents_three_tiers(descents, labels, dual.prices, dual.profit, title)
     plt.show()
 
 def main():

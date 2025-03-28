@@ -6,6 +6,8 @@ from matplotlib.animation import FuncAnimation
 
 from collections import Counter
 
+from pricing.static.system import TieredPricingSystem
+
 
 def surface_plot(
     X: list | np.ndarray,
@@ -355,13 +357,15 @@ def compare_descents_three_tiers(
     descents: list[GradientDescent],
     labels: list[str],
     optimal_prices: tuple[float, float, float],
+    optimal_profit: float,
     title: str,
     elev: int = 30,
     azim: int = 45,
     figsize: tuple = (10, 8),
     colormap: str = "viridis",
-    marker_size: float = 3,
-    line_width: float = 1.5,
+    marker_size: float = 1,
+    colors=None,
+    line_width: float = 1,
     show_start_end: bool = True,
     include_colorbar: bool = True
 )   -> plt.Figure:
@@ -369,7 +373,8 @@ def compare_descents_three_tiers(
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111, projection="3d")
 
-    colors = ["green", "blue", "purple", "orange", "yellow", "black"]
+    if colors is None:
+        colors = ["green", "blue", "purple", "orange", "yellow", "black"]
 
     for i, descent in enumerate(descents):
         x = [price[0] for price in descent.price_history]
@@ -378,19 +383,19 @@ def compare_descents_three_tiers(
         profits = descent.profit_history
 
         color = colors[i % len(colors)]
-        points = ax.scatter(x, y, z, c=profits, cmap=colormap, s=marker_size)
+        points = ax.scatter(x, y, z, color=color, s=marker_size)
 
-        ax.plot(
+        '''ax.plot(
             x, 
             y,
             z, 
             color=color,
             linewidth=line_width
-        )
+        )'''
         if show_start_end:
             ax.scatter(x[-1], y[-1], z[-1], color=color, s=marker_size*10, label=labels[i], marker='s')
     
-    ax.scatter(optimal_prices[0], optimal_prices[1], optimal_prices[2], color='red', s=marker_size*10, marker='s', label='Optimal Prices')
+    ax.scatter(optimal_prices[0], optimal_prices[1], optimal_prices[2], color='red', s=marker_size*50, marker='s', label=f'Optimal Prices, F: {optimal_profit:.2f}')
 
     ax.legend(loc="upper left")
     ax.set_xlabel('Tier 1 Price')
@@ -405,9 +410,9 @@ def compare_descents_three_tiers(
 def descent_title(costs: list[float], lambda_value: float, profit: float, distribution: str, mu: float, sigma: float) -> str:
     title = f"C: {costs}, λ: {lambda_value}, f(v): {distribution}"
     if distribution == 'gaussian':
-        return f"{title}, μ: {mu}, σ: {sigma}, F: {profit}"
+        return f"{title}, μ: {mu}, σ: {sigma}"
     else:
-        return f"{title}, α: {mu-sigma}, β: {mu+sigma}, F: {profit}"
+        return f"{title}, α: {mu-sigma}, β: {mu+sigma}"
 
 
 def descent_label_lr(lr: float) -> str:
@@ -425,6 +430,7 @@ def plot_parameter_history(
     title="Parameter Estimation History",
     use_trials_on_x=True,
     include_ci=False,
+    colors=None,
     confidence_level=0.95,
 ):
     """
@@ -746,4 +752,371 @@ def plot_choice_distribution(
                     ha='center', va='bottom')
     
     plt.tight_layout()
+    return fig
+
+
+def compare_profit_history(
+    controllers: list,
+    controller_labels: list[str],
+    system: TieredPricingSystem,
+    optimal_profit: float = None,
+    figsize: tuple = (12, 7),
+    title: str = "Profit Evolution Comparison",
+    window_size: int = 1,
+    styles: list[str] = None,
+    colors: list[str] = None,
+    show_final_values: bool = True,
+    legend_loc: str = 'best',
+    normalize: bool = False,
+    y_limit: tuple = None,
+    x_limit: tuple = None,
+    include_annotations: bool = False
+) -> plt.Figure:
+    """
+    Compare profit histories from multiple controllers during optimization.
+    
+    Parameters
+    ----------
+    controllers : list
+        List of controller objects (e.g., StochasticGradientDescent) with profit_history attribute.
+    controller_labels : list of str
+        Labels for each controller in the legend.
+    optimal_profit : float, optional
+        The optimal/target profit value for reference, if known.
+    figsize : tuple, optional
+        Figure size as (width, height) in inches (default: (12, 7)).
+    title : str, optional
+        Title of the plot (default: "Profit Evolution Comparison").
+    window_size : int, optional
+        Size of moving average window for smoothing profit curves (default: 1, no smoothing).
+    styles : list of str, optional
+        Line styles for each controller (default: cycles through basic styles).
+    colors : list of str, optional
+        Colors for each controller (default: uses consistent color scheme with other functions).
+    show_final_values : bool, optional
+        If True, show annotations with final profit values (default: True).
+    legend_loc : str, optional
+        Location of the legend (default: 'best').
+    normalize : bool, optional
+        If True, normalize profits by dividing by optimal_profit (default: False).
+    y_limit : tuple, optional
+        Custom y-axis limits as (min, max) (default: None, auto-determined).
+    x_limit : tuple, optional
+        Custom x-axis limits as (min, max) (default: None, auto-determined).
+    include_annotations : bool, optional
+        If True, add annotations showing final values and convergence metrics (default: True).
+        
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        A Matplotlib Figure object containing the profit history comparison.
+    """
+    if len(controllers) != len(controller_labels):
+        raise ValueError("Number of controllers must match number of labels")
+    
+    # Default styles and colors if not provided
+    if styles is None:
+        styles = ['-', '--', '-.', ':']
+    if colors is None:
+        colors = ["green", "blue", "purple", "orange", "yellow", "black"]
+    
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    max_iterations = 0
+    final_profits = []
+    
+    # Plot each controller's profit history
+    for i, (controller, label) in enumerate(zip(controllers, controller_labels)):
+        if not hasattr(controller, "profit_history") or not controller.profit_history:
+            continue
+        
+        profits = [system.profit(prices) for prices in controller.price_history]
+        
+        # Normalize if requested and optimal_profit is provided
+        if normalize and optimal_profit is not None:
+            profits = profits / optimal_profit
+        
+        # Apply moving average smoothing if window_size > 1
+        if window_size > 1:
+            # Apply convolution for smoothing
+            kernel = np.ones(window_size) / window_size
+            smoothed_profits = np.convolve(profits, kernel, mode='valid')
+            # Create corresponding x values (iterations)
+            iterations = np.arange(window_size-1, len(profits))
+            if len(iterations) != len(smoothed_profits):
+                iterations = iterations[:len(smoothed_profits)]
+        else:
+            smoothed_profits = profits
+            iterations = np.arange(len(profits))
+        
+        # Keep track of maximum iterations for plot limits
+        max_iterations = max(max_iterations, len(iterations))
+        
+        # Select style and color with cycling
+        style = styles[i % len(styles)]
+        color = colors[i % len(colors)]
+        
+        # Plot the profit history
+        ax.plot(iterations, smoothed_profits, 
+                linestyle=style, 
+                color=color, 
+                linewidth=2, 
+                label=label)
+        
+        # Store final profit value for annotations
+        final_profits.append(smoothed_profits[-1])
+    
+    # Add optimal profit line if provided
+    if optimal_profit is not None:
+        optimal_value = 1.0 if normalize else optimal_profit
+        ax.axhline(y=optimal_value, color='red', linestyle='--', alpha=0.7, 
+                   label='Optimal Profit' if not normalize else 'Optimal (100%)')
+    
+    # Add annotations with final values if requested
+    if show_final_values and include_annotations:
+        for i, (label, final_profit) in enumerate(zip(controller_labels, final_profits)):
+            color = colors[i % len(colors)]
+            
+            # Determine annotation position (avoid overlaps)
+            x_pos = max_iterations + max_iterations * 0.01
+            
+            # Compute percentage of optimal if provided
+            if optimal_profit is not None and not normalize:
+                percentage = 100 * final_profit / optimal_profit
+                ax.annotate(f"{label}: {final_profit:.3f} ({percentage:.1f}%)", 
+                           xy=(max_iterations, final_profit),
+                           xytext=(x_pos, final_profit),
+                           color=color,
+                           fontweight='bold',
+                           va='center')
+            else:
+                ax.annotate(f"{label}: {final_profit:.3f}", 
+                           xy=(max_iterations, final_profit),
+                           xytext=(x_pos, final_profit),
+                           color=color,
+                           fontweight='bold',
+                           va='center')
+    
+    # Set custom axis limits if provided
+    if y_limit is not None:
+        ax.set_ylim(y_limit)
+    if x_limit is not None:
+        ax.set_xlim(x_limit)
+    else:
+        # Add some padding to the right for annotations
+        current_xlim = ax.get_xlim()
+        if show_final_values:
+            ax.set_xlim(current_xlim[0], current_xlim[1] * 1.2)
+    
+    # Set labels and title
+    ax.set_xlabel('Iteration')
+    
+    if normalize:
+        ax.set_ylabel('Normalized Profit (% of Optimal)')
+        # Add percentage ticks on the y-axis
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))
+    else:
+        ax.set_ylabel('Profit')
+    
+    ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc=legend_loc)
+    
+    plt.tight_layout()
+    return fig
+
+
+def compare_convergence_metrics(
+    controllers: list,
+    controller_labels: list[str],
+    system: TieredPricingSystem,
+    optimal_prices: list[float] = None,
+    optimal_profit: float = None,
+    figsize: tuple = (14, 8),
+    title: str = "Convergence Metrics Comparison",
+    colors: list[str] = None,
+    metric_types: list[str] = ['price_error', 'profit_ratio', 'iter_to_converge']
+):
+    """
+    Compare various convergence metrics between multiple controllers.
+    
+    Parameters
+    ----------
+    controllers : list
+        List of controller objects with price_history and profit_history attributes.
+    controller_labels : list of str
+        Labels for each controller in the chart.
+    optimal_prices : list of float, optional
+        The optimal prices for reference, used to calculate price error.
+    optimal_profit : float, optional
+        The optimal profit value for reference, used to calculate profit ratio.
+    figsize : tuple, optional
+        Figure size as (width, height) in inches (default: (14, 8)).
+    title : str, optional
+        Main title of the plot (default: "Convergence Metrics Comparison").
+    colors : list of str, optional
+        Colors for each controller (default: uses consistent color scheme).
+    metric_types : list of str, optional
+        Which metrics to include. Options: 'price_error', 'profit_ratio', 
+        'iter_to_converge', 'final_profit' (default: includes first three).
+        
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        A Matplotlib Figure object containing the convergence metrics comparison.
+    """
+    if len(controllers) != len(controller_labels):
+        raise ValueError("Number of controllers must match number of labels")
+    
+    # Default colors if not provided
+    if colors is None:
+        colors = ["green", "blue", "purple", "orange", "yellow", "black"]
+    
+    # Determine which metrics to calculate and display
+    include_price_error = 'price_error' in metric_types and optimal_prices is not None
+    include_profit_ratio = 'profit_ratio' in metric_types and optimal_profit is not None
+    include_iter_converge = 'iter_to_converge' in metric_types
+    include_final_profit = 'final_profit' in metric_types
+    
+    # Determine how many metrics we'll display
+    num_metrics = sum([include_price_error, include_profit_ratio, 
+                       include_iter_converge, include_final_profit])
+    
+    if num_metrics == 0:
+        raise ValueError("No valid metrics to display. Check metric_types and optional parameters.")
+    
+    # Set up the figure and axes
+    fig, axs = plt.subplots(1, num_metrics, figsize=figsize)
+    
+    # Make axs iterable even if only one subplot
+    if num_metrics == 1:
+        axs = [axs]
+    
+    metric_idx = 0
+    all_metrics = {}
+    
+    # Calculate metrics for each controller
+    price_errors = []
+    profit_ratios = []
+    convergence_iters = []
+    final_profits = []
+    
+    for i, controller in enumerate(controllers):
+        # Price error metric (if requested and optimal prices available)
+        if include_price_error:
+            # Calculate normalized Euclidean distance from optimal prices
+            if len(controller.price_history[-1]) == len(optimal_prices):
+                final_prices = np.array(controller.price_history[-1])
+                error = np.linalg.norm(final_prices - np.array(optimal_prices)) / np.linalg.norm(np.array(optimal_prices))
+                price_errors.append(error)
+            else:
+                price_errors.append(np.nan)  # Different dimensionality
+        
+        # Profit ratio metric (if requested and optimal profit available)
+        if include_profit_ratio:
+            final_profit = system.profit(controller.price_history[-1])
+            ratio = final_profit / optimal_profit
+            profit_ratios.append(ratio)
+        
+        # Iterations to convergence metric (if requested)
+        if include_iter_converge:
+            # Define convergence as when profit doesn't improve by more than 0.1% for 10 iterations
+            profits = np.array([system.profit(prices) for prices in controller.price_history])
+            threshold = 0.001  # 0.1% improvement
+            window = 10  # Check for 10 consecutive iterations
+            
+            # Compute relative improvements
+            improvements = np.diff(profits) / (profits[:-1] + 1e-10)
+            
+            # Find where improvements consistently fall below threshold
+            converged_at = len(improvements)  # Default to last iteration
+            for j in range(len(improvements) - window):
+                if np.all(improvements[j:j+window] < threshold):
+                    converged_at = j
+                    break
+            
+            convergence_iters.append(converged_at)
+        
+        # Final profit metric (if requested)
+        if include_final_profit:
+            final_profits.append(system.profit(controller.price_history[-1]))
+    
+    # Plot price error metric
+    if include_price_error:
+        ax = axs[metric_idx]
+        bars = ax.bar(controller_labels, price_errors, color=[colors[i % len(colors)] for i in range(len(controllers))])
+        ax.set_title('Price Error (lower is better)')
+        ax.set_ylabel('Normalized Error')
+        ax.set_ylim(0, max(price_errors) * 1.2)
+        
+        # Add value labels on bars
+        for bar, error in zip(bars, price_errors):
+            height = bar.get_height()
+            ax.annotate(f'{error:.3f}',
+                      xy=(bar.get_x() + bar.get_width() / 2, height),
+                      xytext=(0, 3),  # 3 points vertical offset
+                      textcoords="offset points",
+                      ha='center', va='bottom')
+        
+        metric_idx += 1
+    
+    # Plot profit ratio metric
+    if include_profit_ratio:
+        ax = axs[metric_idx]
+        bars = ax.bar(controller_labels, profit_ratios, color=[colors[i % len(colors)] for i in range(len(controllers))])
+        ax.set_title('Profit Ratio (higher is better)')
+        ax.set_ylabel('Final Profit / Optimal Profit')
+        ax.set_ylim(0, max(profit_ratios) * 1.2)
+        
+        # Add percentage labels on bars
+        for bar, ratio in zip(bars, profit_ratios):
+            height = bar.get_height()
+            ax.annotate(f'{ratio:.2f} ({ratio*100:.1f}%)',
+                      xy=(bar.get_x() + bar.get_width() / 2, height),
+                      xytext=(0, 3),
+                      textcoords="offset points",
+                      ha='center', va='bottom')
+        
+        metric_idx += 1
+    
+    # Plot iterations to convergence metric
+    if include_iter_converge:
+        ax = axs[metric_idx]
+        bars = ax.bar(controller_labels, convergence_iters, color=[colors[i % len(colors)] for i in range(len(controllers))])
+        ax.set_title('Iterations to Convergence (lower is better)')
+        ax.set_ylabel('Iterations')
+        ax.set_ylim(0, max(convergence_iters) * 1.2)
+        
+        # Add value labels on bars
+        for bar, iters in zip(bars, convergence_iters):
+            height = bar.get_height()
+            ax.annotate(f'{iters}',
+                      xy=(bar.get_x() + bar.get_width() / 2, height),
+                      xytext=(0, 3),
+                      textcoords="offset points",
+                      ha='center', va='bottom')
+        
+        metric_idx += 1
+    
+    # Plot final profit metric
+    if include_final_profit:
+        ax = axs[metric_idx]
+        bars = ax.bar(controller_labels, final_profits, color=[colors[i % len(colors)] for i in range(len(controllers))])
+        ax.set_title('Final Profit')
+        ax.set_ylabel('Profit')
+        ax.set_ylim(0, max(final_profits) * 1.2)
+        
+        # Add value labels on bars
+        for bar, profit in zip(bars, final_profits):
+            height = bar.get_height()
+            ax.annotate(f'{profit:.3f}',
+                      xy=(bar.get_x() + bar.get_width() / 2, height),
+                      xytext=(0, 3),
+                      textcoords="offset points",
+                      ha='center', va='bottom')
+    
+    # Set overall title and adjust layout
+    fig.suptitle(title, fontsize=16)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Make room for suptitle
+    
     return fig
