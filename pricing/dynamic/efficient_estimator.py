@@ -84,7 +84,7 @@ class EfficientGaussianEstimator:
         self.prev_trials.append(trial)
 
         log_probs = self._param_log_probs_batch(trial)
-        log_weights = np.log(self.weights + 1e-12) + 0.5 * log_probs
+        log_weights = np.log(self.weights + 1e-12) + log_probs
         log_weights -= logsumexp(log_weights)
         self.weights = np.exp(log_weights)
 
