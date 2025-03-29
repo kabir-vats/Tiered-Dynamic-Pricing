@@ -7,6 +7,7 @@ from pricing.static.system import TieredPricingSystem
 from pricing.util.simulate import simulate_profits
 from pricing.util.visualize import (
     descent_label_lr,
+    surface_plot,
     plot_descent_two_tiers,
     plot_descent_one_tier,
     compare_descents_two_tiers,
@@ -76,8 +77,8 @@ def test_lr():
 
 def test_lr_two_tiers():
     print('test')
-    C = [2,5]
-    lambda_value = 2 / 3
+    C = [1, 3]
+    lambda_value = 1 / 2
     mu = 2
     sigma = 1
     learning_rates = [0.1, 0.01, 0.001, 0.0001]
@@ -91,7 +92,7 @@ def test_lr_two_tiers():
         descent.maximize()
         descents.append(descent)
     
-    labels = [descent_label_lr(lr) for lr in learning_rates]
+    labels = [descent_label_lr_profit(lr, descent.profit) for lr,descent in zip(learning_rates, descents)]
     title = descent_title(C, lambda_value, max([descent.profit for descent in descents]), "gaussian", mu, sigma)
     compare_n_descents_two_tiers(samples[0], samples[1], profits, descents, labels, title)
     plt.show()
@@ -163,6 +164,27 @@ def main():
     )
     plt.show()"""
 
+def get_surface_plot():
+    C = [2, 5]
+    lambda_value = 2 / 3
+    mu = 2
+    sigma = 1
+    system = TieredPricingSystem(
+        C, len(C), lambda_value, mu, sigma, pdf_type="gaussian"
+    )
+    profits, samples = simulate_profits(system, n_samples=100)
+    fig = surface_plot(
+        samples[0],
+        samples[1],
+        profits,
+        "Tier 1 Price",
+        "Tier 2 Price",
+        "Expected Profit / Customer",
+        f"C: {list(system.costs)} μ: {mu} σ: {sigma} λ: {lambda_value}",
+    )
+    print('test')
+    plt.show()
+
 
 if __name__ == "__main__":
-    test_lr_three_tiers()
+    test_lr_two_tiers()

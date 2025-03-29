@@ -238,7 +238,7 @@ def compare_n_descents_two_tiers(
 
         color = colors[i % len(colors)]
         ax.plot(x, y, z, color=color, marker="o", linewidth="0.5", markersize=0.7, label=labels[i])
-        ax.plot(x[-1], y[-1], z[-1], "ro")
+        ax.plot(x[-1], y[-1], z[-1],  "ro", color=color,)
 
     ax.legend(loc="upper left")
 
