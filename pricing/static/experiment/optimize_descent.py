@@ -102,7 +102,7 @@ def test_lr_three_tiers():
     lambda_value = 2/3
     mu = 3
     sigma = 1
-    learning_rates = [0.01, 0.001]
+    learning_rates = [0.1, 0.01, 0.001, 0.0001]
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma, pdf_type="gaussian")
     
     descents = []
@@ -117,7 +117,7 @@ def test_lr_three_tiers():
     dual.maximize()
     print(dual.profit)
 
-    print(system.tier_probabilities(descents[0].prices))
+    print(system.tier_probabilities(dual.prices))
 
     title = descent_title(C, lambda_value, max([descent.profit for descent in descents]), "gaussian", mu, sigma)
     fig = compare_descents_three_tiers(descents, labels, dual.prices, dual.profit, title)
@@ -187,4 +187,4 @@ def get_surface_plot():
 
 
 if __name__ == "__main__":
-    test_lr_two_tiers()
+    test_lr_three_tiers()

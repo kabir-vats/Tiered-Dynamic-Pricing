@@ -30,11 +30,11 @@ def compare_pricing_three_tiers():
     lambda_value = 2/3
     mu = 3
     sigma = 1
-    max_iters = 800
-    learning_rates = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+    # max_iters = 800
+    # learning_rates = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
     # TRIAL SETTINGS
-    # max_iters = 300
-    # learning_rates = [0.05]
+    max_iters = 300
+    learning_rates = [0.05]
     system = TieredPricingSystem(C, len(C), lambda_value, mu, sigma, pdf_type="gaussian")
     customer = Customer(mu, sigma, lambda_value, pdf_type="gaussian")
     business = Business(C, customer)
